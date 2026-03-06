@@ -44,6 +44,19 @@
             border-bottom: 3px solid var(--accent);
             padding-bottom: 20px;
             animation: slideDown 0.6s ease-out;
+            display: flex;
+            align-items: center;
+            gap: 20px;
+        }
+
+        .header-logo {
+            height: 80px;
+            width: auto;
+            flex-shrink: 0;
+        }
+
+        .header-content {
+            flex: 1;
         }
 
         @keyframes slideDown {
@@ -545,8 +558,11 @@
     <div class="container">
         <!-- Header -->
         <header>
-            <h1>🔧 Ochre Trade Services Tool Library</h1>
-            <p class="header-subtitle">Equipment & Power Tool Checkout</p>
+            <img src="ochre-logo.png" alt="Ochre Trade Services" class="header-logo">
+            <div class="header-content">
+                <h1>Ochre Trade Services Tool Library</h1>
+                <p class="header-subtitle">Equipment & Power Tool Checkout</p>
+            </div>
         </header>
 
         <!-- Main Content -->
@@ -694,47 +710,167 @@
     </div>
 
     <script>
-        let tools = JSON.parse(localStorage.getItem('tools')) || [];
+        // GitHub Configuration
+        const GITHUB_OWNER = 'Nic-St';
+        const GITHUB_REPO = 'Ochre-Tool-Library';
+        const GITHUB_BRANCH = 'main';
+        const GITHUB_FILE = 'tools-data.json';
+        let GITHUB_TOKEN = localStorage.getItem('githubToken') || '';
+
+        let tools = [];
         let currentToolId = null;
         let currentImageData = null;
+        let isInitialized = false;
+
+        // Initialize GitHub Token on first load
+        async function initializeGitHub() {
+            if (!GITHUB_TOKEN) {
+                GITHUB_TOKEN = prompt('Enter your GitHub Personal Access Token:\n(Create one at github.com → Settings → Developer settings → Personal access tokens)');
+                if (!GITHUB_TOKEN) {
+                    showNotification('GitHub token required to use this app', 'error');
+                    return false;
+                }
+                localStorage.setItem('githubToken', GITHUB_TOKEN);
+            }
+            await loadToolsFromGitHub();
+            isInitialized = true;
+            return true;
+        }
+
+        // Load tools from GitHub
+        async function loadToolsFromGitHub() {
+            try {
+                const url = `https://api.github.com/repos/${GITHUB_OWNER}/${GITHUB_REPO}/contents/${GITHUB_FILE}?ref=${GITHUB_BRANCH}`;
+                const response = await fetch(url, {
+                    headers: {
+                        'Authorization': `token ${GITHUB_TOKEN}`,
+                        'Accept': 'application/vnd.github.v3.raw'
+                    }
+                });
+                
+                if (response.status === 404) {
+                    // File doesn't exist yet, start with empty array
+                    tools = [];
+                    await saveToolsToGitHub();
+                } else if (response.ok) {
+                    tools = await response.json();
+                    renderTools();
+                } else {
+                    showNotification('Failed to load data from GitHub', 'error');
+                    tools = JSON.parse(localStorage.getItem('tools')) || [];
+                }
+            } catch (error) {
+                console.error('Error loading from GitHub:', error);
+                showNotification('Error connecting to GitHub', 'error');
+                tools = JSON.parse(localStorage.getItem('tools')) || [];
+            }
+        }
+
+        // Save tools to GitHub
+        async function saveToolsToGitHub() {
+            if (!isInitialized) return;
+            
+            try {
+                const url = `https://api.github.com/repos/${GITHUB_OWNER}/${GITHUB_REPO}/contents/${GITHUB_FILE}`;
+                
+                // Get current file SHA if it exists
+                let sha = null;
+                try {
+                    const getResponse = await fetch(url + `?ref=${GITHUB_BRANCH}`, {
+                        headers: {
+                            'Authorization': `token ${GITHUB_TOKEN}`,
+                            'Accept': 'application/vnd.github.v3+json'
+                        }
+                    });
+                    if (getResponse.ok) {
+                        const data = await getResponse.json();
+                        sha = data.sha;
+                    }
+                } catch (e) {
+                    // File doesn't exist yet
+                }
+
+                const content = btoa(unescape(encodeURIComponent(JSON.stringify(tools, null, 2))));
+                
+                const response = await fetch(url, {
+                    method: 'PUT',
+                    headers: {
+                        'Authorization': `token ${GITHUB_TOKEN}`,
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({
+                        message: 'Update tool inventory',
+                        content: content,
+                        branch: GITHUB_BRANCH,
+                        ...(sha && { sha: sha })
+                    })
+                });
+
+                if (!response.ok) {
+                    console.error('GitHub save error:', response.status);
+                }
+            } catch (error) {
+                console.error('Error saving to GitHub:', error);
+            }
+        }
+
+        // Wrapper for save tool
+        function saveTool() {
+            localStorage.setItem('tools', JSON.stringify(tools));
+            saveToolsToGitHub();
+        }
 
         // Image Upload Handler
-        document.getElementById('toolImage').addEventListener('change', function(e) {
-            const file = e.target.files[0];
-            if (file) {
-                const reader = new FileReader();
-                reader.onload = function(event) {
-                    currentImageData = event.target.result;
-                    const preview = document.getElementById('imagePreview');
-                    preview.innerHTML = `<img src="${currentImageData}" alt="Preview">`;
-                };
-                reader.readAsDataURL(file);
-            }
-        });
+        const toolImageInput = document.getElementById('toolImage');
+        if (toolImageInput) {
+            toolImageInput.addEventListener('change', function(e) {
+                const file = e.target.files[0];
+                if (file) {
+                    const reader = new FileReader();
+                    reader.onload = function(event) {
+                        currentImageData = event.target.result;
+                        const preview = document.getElementById('imagePreview');
+                        preview.innerHTML = `<img src="${currentImageData}" alt="Preview">`;
+                    };
+                    reader.readAsDataURL(file);
+                }
+            });
+        }
 
         // Edit Image Upload Handler
-        document.getElementById('editToolImage').addEventListener('change', function(e) {
-            const file = e.target.files[0];
-            if (file) {
-                const reader = new FileReader();
-                reader.onload = function(event) {
-                    currentImageData = event.target.result;
-                    const preview = document.getElementById('editImagePreview');
-                    preview.innerHTML = `<img src="${currentImageData}" alt="Preview">`;
-                };
-                reader.readAsDataURL(file);
-            }
-        });
+        const editImageInput = document.getElementById('editToolImage');
+        if (editImageInput) {
+            editImageInput.addEventListener('change', function(e) {
+                const file = e.target.files[0];
+                if (file) {
+                    const reader = new FileReader();
+                    reader.onload = function(event) {
+                        currentImageData = event.target.result;
+                        const preview = document.getElementById('editImagePreview');
+                        if (preview) {
+                            preview.innerHTML = `<img src="${currentImageData}" alt="Preview">`;
+                        }
+                    };
+                    reader.readAsDataURL(file);
+                }
+            });
+        }
 
         // Image Preview Click
-        document.getElementById('imagePreview').addEventListener('click', function() {
-            document.getElementById('toolImage').click();
-        });
+        const imagePreview = document.getElementById('imagePreview');
+        if (imagePreview) {
+            imagePreview.addEventListener('click', function() {
+                document.getElementById('toolImage').click();
+            });
+        }
 
         // Edit Image Preview Click
-        document.getElementById('editImagePreview').addEventListener('click', function() {
-            document.getElementById('editToolImage').click();
-        });
+        const editImagePreview = document.getElementById('editImagePreview');
+        if (editImagePreview) {
+            editImagePreview.addEventListener('click', function() {
+                document.getElementById('editToolImage').click();
+            });
+        }
 
         // Add Tool
         document.getElementById('addToolForm').addEventListener('submit', (e) => {
@@ -982,8 +1118,15 @@
             }
         });
 
-        // Initial render
-        renderTools();
+        // Initial render and GitHub sync
+        window.addEventListener('DOMContentLoaded', async () => {
+            await initializeGitHub();
+            renderTools();
+            // Refresh data every 10 seconds to pick up changes from other users
+            setInterval(async () => {
+                await loadToolsFromGitHub();
+            }, 10000);
+        });
     </script>
 </body>
 </html>
