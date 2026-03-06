@@ -250,6 +250,39 @@
             font-size: 0.8em;
         }
 
+        .tool-notebox {
+            background: #fafafa;
+            border: 2px solid var(--border);
+            padding: 12px;
+            min-height: 80px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            text-align: center;
+            font-size: 0.9em;
+            color: #999;
+            flex: 1;
+            margin-left: 16px;
+        }
+
+        .tool-notebox.with-content {
+            background: white;
+            color: var(--primary);
+            text-align: left;
+            justify-content: flex-start;
+            align-items: flex-start;
+            padding: 12px;
+        }
+
+        .tool-notebox.with-content strong {
+            display: block;
+            margin-bottom: 6px;
+            font-size: 0.8em;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            color: #999;
+        }
+
         .condition-badge {
             display: inline-block;
             width: fit-content;
@@ -1222,7 +1255,6 @@
                                     `<strong>Location:</strong> ${tool.location}`
                                 }
                             </div>
-                            ${tool.notes ? `<div class="tool-info"><strong>Notes:</strong> ${tool.notes}</div>` : ''}
                             <div class="condition-badge condition-${tool.condition || 'unset'}" onclick="openConditionModal(${tool.id})">
                                 ${tool.condition === 'good' ? '✓ Good Condition' : tool.condition === 'maintenance' ? '⚠️ Needs Maintenance' : tool.condition === 'damaged' ? '✕ Damaged' : '? Set Condition'}
                             </div>
@@ -1233,6 +1265,9 @@
                                 }
                                 <button class="btn btn-danger" onclick="deleteTool(${tool.id})">Delete</button>
                             </div>
+                        </div>
+                        <div class="tool-notebox ${tool.notes ? 'with-content' : ''}">
+                            ${tool.notes ? `<div><strong>Notes</strong>${tool.notes}</div>` : 'No notes'}
                         </div>
                     </div>
                 `).join('');
