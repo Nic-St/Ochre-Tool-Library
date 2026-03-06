@@ -1466,8 +1466,7 @@
             } else {
                 toolsList.innerHTML = sorted.map(tool => `
                     <div class="tool-item">
-                        <div class="tool-image" onclick="openEditImageModal(${tool.id})" style="${tool.image ? `background-image: url('${tool.image}'); background-size: cover;` : `background: linear-gradient(135deg, #ff6b35 0%, #d94f1f 100%); display: flex; align-items: center; justify-content: center; color: white; font-size: 3em;`}">
-                            ${tool.image ? '' : '📦'}
+                        <div class="tool-image" onclick="openEditImageModal(${tool.id})" style="${tool.image ? `background-image: url('${tool.image}'); background-size: cover;` : `background-image: url('https://github.com/Nic-St/Ochre-Tool-Library/raw/main/ochre-logo.png'); background-size: contain; background-repeat: no-repeat; background-position: center; background-color: #f5f5f5;`}">
                         </div>
                         <span class="tool-status ${tool.checkedOutBy ? 'checked-out' : 'available'}">
                             ${tool.checkedOutBy ? 'Checked Out' : 'Available'}
