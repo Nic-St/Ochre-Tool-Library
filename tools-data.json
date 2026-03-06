@@ -1,1 +1,14 @@
-[]
+[
+  {
+    "id": 1772798459910,
+    "name": "A Tool",
+    "category": "Nail Guns",
+    "location": "Shed",
+    "condition": "good",
+    "image": null,
+    "checkedOutBy": null,
+    "checkedOutDate": null,
+    "expectedReturn": null,
+    "notes": null
+  }
+]
