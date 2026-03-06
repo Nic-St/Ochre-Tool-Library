@@ -1068,11 +1068,6 @@
         // Search
         document.getElementById('searchBox').addEventListener('input', renderTools);
 
-        // Save/Load
-        function saveTool() {
-            localStorage.setItem('tools', JSON.stringify(tools));
-        }
-
         // Export
         function exportData() {
             const csv = [
