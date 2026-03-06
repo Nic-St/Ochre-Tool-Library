@@ -780,7 +780,7 @@
             try {
                 const url = `https://api.github.com/repos/${GITHUB_OWNER}/${GITHUB_REPO}/contents/${GITHUB_FILE}`;
                 
-                // Get current file SHA - this is required for updates
+                // Get current file SHA - MUST wait for this
                 let sha = null;
                 try {
                     const getResponse = await fetch(url, {
@@ -794,10 +794,16 @@
                         sha = data.sha;
                         console.log('Retrieved file SHA:', sha);
                     } else {
-                        console.log('Could not get existing file SHA:', getResponse.status);
+                        console.warn('Could not get existing file (status ' + getResponse.status + ') - file may not exist yet');
                     }
                 } catch (e) {
-                    console.log('Error getting SHA:', e);
+                    console.warn('Error getting SHA:', e.message);
+                }
+
+                // If we still don't have a SHA, we can't update
+                if (!sha) {
+                    console.error('Failed to get file SHA - cannot update');
+                    return;
                 }
 
                 const content = btoa(unescape(encodeURIComponent(JSON.stringify(tools, null, 2))));
@@ -805,13 +811,11 @@
                 const requestBody = {
                     message: 'Update tool inventory',
                     content: content,
-                    branch: GITHUB_BRANCH
+                    branch: GITHUB_BRANCH,
+                    sha: sha
                 };
                 
-                // Only include SHA if we have it
-                if (sha) {
-                    requestBody.sha = sha;
-                }
+                console.log('Sending update with SHA:', sha);
                 
                 const response = await fetch(url, {
                     method: 'PUT',
@@ -823,10 +827,11 @@
                 });
 
                 if (response.ok) {
-                    console.log('Tools synced to GitHub');
+                    console.log('Tools synced to GitHub successfully');
                 } else {
                     const errorText = await response.text();
-                    console.error('GitHub save error:', response.status, response.statusText, errorText);
+                    console.error('GitHub save error:', response.status, response.statusText);
+                    console.error('Response:', errorText);
                 }
             } catch (error) {
                 console.error('Error saving to GitHub:', error);
