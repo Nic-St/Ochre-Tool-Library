@@ -34,5 +34,17 @@
     "checkedOutDate": null,
     "expectedReturn": null,
     "notes": null
+  },
+  {
+    "id": 1772798496905,
+    "name": "Makita Track Saw",
+    "category": "Saws",
+    "location": "Shed",
+    "condition": "good",
+    "image": null,
+    "checkedOutBy": null,
+    "checkedOutDate": null,
+    "expectedReturn": null,
+    "notes": null
   }
 ]
