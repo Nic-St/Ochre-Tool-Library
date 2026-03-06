@@ -772,7 +772,10 @@
 
         // Save tools to GitHub
         async function saveToolsToGitHub() {
-            if (!isInitialized) return;
+            if (!GITHUB_TOKEN) {
+                console.log('No GitHub token set, skipping sync');
+                return;
+            }
             
             try {
                 const url = `https://api.github.com/repos/${GITHUB_OWNER}/${GITHUB_REPO}/contents/${GITHUB_FILE}`;
@@ -810,8 +813,10 @@
                     })
                 });
 
-                if (!response.ok) {
-                    console.error('GitHub save error:', response.status);
+                if (response.ok) {
+                    console.log('Tools synced to GitHub');
+                } else {
+                    console.error('GitHub save error:', response.status, response.statusText);
                 }
             } catch (error) {
                 console.error('Error saving to GitHub:', error);
