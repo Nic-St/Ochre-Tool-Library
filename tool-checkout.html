@@ -336,6 +336,12 @@
             color: #721c24;
         }
 
+        .condition-unset {
+            background: #e2e3e5;
+            color: #383d41;
+            border: 2px dashed #383d41;
+        }
+
         .tool-image {
             width: 120px;
             height: 120px;
@@ -1025,8 +1031,8 @@
                                 }
                             </div>
                             ${tool.notes ? `<div class="tool-info"><strong>Notes:</strong> ${tool.notes}</div>` : ''}
-                            <div class="condition-badge condition-${tool.condition}" onclick="openConditionModal(${tool.id})">
-                                ${tool.condition === 'good' ? '✓ Good Condition' : tool.condition === 'maintenance' ? '⚠️ Needs Maintenance' : '✕ Damaged'}
+                            <div class="condition-badge condition-${tool.condition || 'unset'}" onclick="openConditionModal(${tool.id})">
+                                ${tool.condition === 'good' ? '✓ Good Condition' : tool.condition === 'maintenance' ? '⚠️ Needs Maintenance' : tool.condition === 'damaged' ? '✕ Damaged' : '? Set Condition'}
                             </div>
                             <div class="tool-actions">
                                 <button class="btn btn-edit-image" onclick="openEditImageModal(${tool.id})">📷 ${tool.image ? 'Update' : 'Add'} Image</button>
