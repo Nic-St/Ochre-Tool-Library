@@ -733,6 +733,10 @@
                 localStorage.setItem('githubToken', GITHUB_TOKEN);
             }
             await loadToolsFromGitHub();
+            // If no tools loaded from GitHub, load from local storage
+            if (tools.length === 0) {
+                tools = JSON.parse(localStorage.getItem('tools')) || [];
+            }
             isInitialized = true;
             return true;
         }
@@ -749,20 +753,20 @@
                 });
                 
                 if (response.status === 404) {
-                    // File doesn't exist yet, start with empty array
-                    tools = [];
-                    await saveToolsToGitHub();
+                    // File doesn't exist yet - don't overwrite local data
+                    console.log('No data file in GitHub yet');
                 } else if (response.ok) {
-                    tools = await response.json();
-                    renderTools();
+                    const data = await response.json();
+                    // Only update if we got actual data
+                    if (data && Array.isArray(data) && data.length > 0) {
+                        tools = data;
+                        renderTools();
+                    }
                 } else {
-                    showNotification('Failed to load data from GitHub', 'error');
-                    tools = JSON.parse(localStorage.getItem('tools')) || [];
+                    console.log('Failed to load from GitHub:', response.status);
                 }
             } catch (error) {
                 console.error('Error loading from GitHub:', error);
-                showNotification('Error connecting to GitHub', 'error');
-                tools = JSON.parse(localStorage.getItem('tools')) || [];
             }
         }
 
