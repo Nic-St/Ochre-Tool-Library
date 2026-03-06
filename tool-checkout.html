@@ -398,21 +398,92 @@
             display: none;
         }
 
-        .btn-edit-image {
-            background: #4a90e2;
+        .btn-lg {
+            width: 100%;
+            padding: 14px 24px;
+            font-size: 1em;
+        }
+
+        /* Ghost Button Styling */
+        .btn {
+            padding: 12px 24px;
+            border: 2px solid var(--border);
+            border-radius: 0;
+            font-family: 'Syne', sans-serif;
+            font-weight: 700;
+            font-size: 0.95em;
+            cursor: pointer;
+            transition: all 0.3s;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            background: transparent;
+        }
+
+        .btn-primary {
+            border-color: var(--accent);
             color: white;
+            background: var(--accent);
+            width: 100%;
+        }
+
+        .btn-primary:hover {
+            background: var(--accent-dark);
+            border-color: var(--accent-dark);
+            transform: translateY(-2px);
+            box-shadow: 0 8px 20px rgba(255, 107, 53, 0.3);
+        }
+
+        .btn-secondary {
+            background: transparent;
+            color: var(--primary);
+            border-color: var(--border);
+            padding: 10px 16px;
+            font-size: 0.85em;
+        }
+
+        .btn-secondary:hover {
+            border-color: var(--accent);
+            color: var(--accent);
+            background: rgba(255, 107, 53, 0.05);
+        }
+
+        .btn-danger {
+            background: transparent;
+            color: var(--danger);
+            border-color: var(--danger);
+            padding: 8px 12px;
+            font-size: 0.8em;
+        }
+
+        .btn-danger:hover {
+            background: rgba(231, 76, 60, 0.05);
+            border-color: var(--danger);
+        }
+
+        .btn-success {
+            background: var(--success);
+            color: white;
+            border-color: var(--success);
+            padding: 8px 12px;
+            font-size: 0.8em;
+        }
+
+        .btn-success:hover {
+            background: #27ae60;
+            border-color: #27ae60;
+        }
+
+        .btn-edit-image {
+            background: transparent;
+            color: #4a90e2;
+            border-color: #4a90e2;
             padding: 6px 10px;
             font-size: 0.75em;
         }
 
         .btn-edit-image:hover {
-            background: #357abd;
-        }
-
-        .btn-lg {
-            width: 100%;
-            padding: 14px 24px;
-            font-size: 1em;
+            background: rgba(74, 144, 226, 0.05);
+            border-color: #4a90e2;
         }
 
         /* Sidebar */
@@ -1070,7 +1141,7 @@
             }
             const tool = tools.find(t => t.id === currentToolId);
             tool.checkedOutBy = name;
-            tool.checkedOutDate = new Date().toLocaleDateString();
+            tool.checkedOutDate = new Date().toLocaleDateString('en-AU');
             tool.notes = document.getElementById('checkoutNotes').value || null;
             saveTool();
             renderTools();
