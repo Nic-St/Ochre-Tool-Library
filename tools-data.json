@@ -18,9 +18,9 @@
     "location": "Shed",
     "condition": "maintenance",
     "image": null,
-    "checkedOutBy": null,
-    "checkedOutDate": null,
-    "expectedReturn": null,
+    "checkedOutBy": "Nic",
+    "checkedOutDate": "06/03/2026",
+    "expectedReturn": "2-3 Days",
     "notes": null
   },
   {
