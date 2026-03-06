@@ -748,9 +748,14 @@
                 <div class="panel">
                     <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 16px;">
                         <h2 style="margin: 0;">Inventory</h2>
-                        <div style="display: flex; gap: 8px;">
-                            <button class="sort-btn" id="sortNameBtn" onclick="toggleSort('name')">Name <span id="nameArrow">↓</span></button>
-                            <button class="sort-btn" id="sortDurationBtn" onclick="toggleSort('duration')">Duration <span id="durationArrow"></span></button>
+                        <div style="display: flex; gap: 12px; align-items: center;">
+                            <select id="categoryFilter" onchange="changeCategoryFilter()" style="padding: 8px 12px; border: 2px solid var(--border); background: white; font-family: 'IBM Plex Mono', monospace; font-weight: 700; font-size: 0.8em; text-transform: uppercase; letter-spacing: 1px; cursor: pointer;">
+                                <option value="">-- All Categories --</option>
+                            </select>
+                            <div style="display: flex; gap: 8px;">
+                                <button class="sort-btn" id="sortNameBtn" onclick="toggleSort('name')">Name <span id="nameArrow">↓</span></button>
+                                <button class="sort-btn" id="sortDurationBtn" onclick="toggleSort('duration')">Duration <span id="durationArrow"></span></button>
+                            </div>
                         </div>
                     </div>
                     <div class="search-container">
@@ -945,6 +950,45 @@
         </div>
     </div>
 
+    <!-- Edit Tool Modal -->
+    <div id="editToolModal" class="modal">
+        <div class="modal-content">
+            <h3>Edit Tool</h3>
+            <div class="form-group">
+                <label>Tool Image</label>
+                <div id="editToolImagePreview" class="tool-image-preview-edit" onclick="document.getElementById('editToolImage').click()" style="cursor: pointer; padding: 12px; border: 2px dashed var(--border); text-align: center; background: #f9f9f9; font-size: 1.5em;">📷</div>
+                <input type="file" id="editToolImage" accept="image/*" style="display: none;">
+            </div>
+            <div class="form-group">
+                <label>Tool Name</label>
+                <input type="text" id="editToolName" required>
+            </div>
+            <div class="form-group">
+                <label>Category</label>
+                <input type="text" id="editToolCategory" required>
+            </div>
+            <div class="form-group">
+                <label>Location (when not checked out)</label>
+                <input type="text" id="editToolLocation" required>
+            </div>
+            <div class="form-group">
+                <label>Condition</label>
+                <select id="editToolCondition" required>
+                    <option value="good">Good Condition</option>
+                    <option value="maintenance">Needs Maintenance</option>
+                    <option value="damaged">Damaged</option>
+                </select>
+            </div>
+            <div class="modal-buttons">
+                <div style="display: flex; gap: 12px;">
+                    <button class="btn btn-primary" onclick="confirmEditTool()" style="flex: 1;">Save Changes</button>
+                    <button class="btn btn-secondary" onclick="closeEditToolModal()" style="flex: 1;">Cancel</button>
+                </div>
+                <button class="btn btn-danger" onclick="confirmDeleteTool()" style="width: 100%; margin-top: 12px;">🗑️ Delete Tool</button>
+            </div>
+        </div>
+    </div>
+
     <!-- Sync Indicator -->
     <div class="sync-indicator">
         <div class="sync-dot"></div>
@@ -971,6 +1015,39 @@
         let isInitialized = false;
         let currentSort = localStorage.getItem('toolSort') || 'name-asc';
         let sortDirection = 'asc'; // asc or desc
+        let selectedCategory = '';
+
+        // Category Filter
+        function changeCategoryFilter() {
+            selectedCategory = document.getElementById('categoryFilter').value;
+            renderTools();
+        }
+
+        function populateCategoryDropdown() {
+            const categoryFilter = document.getElementById('categoryFilter');
+            const categories = [...new Set(tools.map(t => t.category))].sort();
+            
+            // Clear existing options except "All Categories"
+            const allCategoriesOption = categoryFilter.options[0];
+            categoryFilter.innerHTML = '';
+            categoryFilter.appendChild(allCategoriesOption);
+            
+            // Add categories
+            categories.forEach(category => {
+                const option = document.createElement('option');
+                option.value = category;
+                option.textContent = category;
+                categoryFilter.appendChild(option);
+            });
+            
+            // Restore selected category if it still exists
+            if (selectedCategory && categories.includes(selectedCategory)) {
+                categoryFilter.value = selectedCategory;
+            } else {
+                categoryFilter.value = '';
+                selectedCategory = '';
+            }
+        }
 
         // Sort Functions
         function toggleSort(type) {
@@ -1349,16 +1426,24 @@
         // Render Tools
         function renderTools() {
             const searchTerm = document.getElementById('searchBox').value.toLowerCase();
-            const filtered = tools.filter(t => 
+            let filtered = tools.filter(t => 
                 t.name.toLowerCase().includes(searchTerm) || 
                 t.category.toLowerCase().includes(searchTerm)
             );
+
+            // Apply category filter
+            if (selectedCategory) {
+                filtered = filtered.filter(t => t.category === selectedCategory);
+            }
 
             // Apply sorting
             const sorted = sortTools(filtered);
             
             // Update sort button display
             updateSortButtons();
+            
+            // Update category dropdown
+            populateCategoryDropdown();
 
             const toolsList = document.getElementById('toolsList');
             if (sorted.length === 0) {
@@ -1393,7 +1478,7 @@
                                     `<button class="btn btn-success" onclick="openReturnModal(${tool.id})">Return</button>` :
                                     `<button class="btn btn-primary" onclick="openCheckoutModal(${tool.id})">Check Out</button>`
                                 }
-                                <button class="btn btn-danger" onclick="deleteTool(${tool.id})">Delete</button>
+                                <button class="btn btn-secondary" onclick="openEditToolModal(${tool.id})">✏️ Edit</button>
                             </div>
                         </div>
                         <div class="tool-notebox ${tool.notes ? 'with-content' : ''}">
@@ -1501,7 +1586,85 @@
             showNotification(`Image updated for ${tool.name}!`, 'success');
         }
 
-        // Add Staff Modal
+        // Edit Tool Modal
+        function openEditToolModal(id) {
+            currentToolId = id;
+            const tool = tools.find(t => t.id === id);
+            
+            document.getElementById('editToolName').value = tool.name;
+            document.getElementById('editToolCategory').value = tool.category;
+            document.getElementById('editToolLocation').value = tool.location;
+            document.getElementById('editToolCondition').value = tool.condition || 'good';
+            
+            if (tool.image) {
+                document.getElementById('editToolImagePreview').innerHTML = `<img src="${tool.image}" style="max-width: 100%; max-height: 100px;">`;
+            } else {
+                document.getElementById('editToolImagePreview').innerHTML = '📷';
+            }
+            
+            document.getElementById('editToolModal').classList.add('active');
+        }
+
+        function closeEditToolModal() {
+            document.getElementById('editToolModal').classList.remove('active');
+            document.getElementById('editToolImage').value = '';
+        }
+
+        function confirmEditTool() {
+            const tool = tools.find(t => t.id === currentToolId);
+            tool.name = document.getElementById('editToolName').value.trim();
+            tool.category = document.getElementById('editToolCategory').value.trim();
+            tool.location = document.getElementById('editToolLocation').value.trim();
+            tool.condition = document.getElementById('editToolCondition').value;
+
+            saveTool();
+            renderTools();
+            closeEditToolModal();
+            showNotification('Tool updated successfully!', 'success');
+        }
+
+        function confirmDeleteTool() {
+            if (confirm('Are you sure you want to delete this tool?')) {
+                deleteTool(currentToolId);
+                closeEditToolModal();
+            }
+        }
+
+        // Edit image upload handler
+        document.addEventListener('DOMContentLoaded', () => {
+            const editImageInput = document.getElementById('editToolImage');
+            if (editImageInput) {
+                editImageInput.addEventListener('change', function() {
+                    if (this.files && this.files[0]) {
+                        const reader = new FileReader();
+                        reader.onload = (e) => {
+                            currentImageData = e.target.result;
+                            document.getElementById('editToolImagePreview').innerHTML = `<img src="${e.target.result}" style="max-width: 100%; max-height: 100px;">`;
+                        };
+                        reader.readAsDataURL(this.files[0]);
+                    }
+                });
+            }
+        });
+
+        // Update image when saving
+        function confirmEditTool() {
+            const tool = tools.find(t => t.id === currentToolId);
+            tool.name = document.getElementById('editToolName').value.trim();
+            tool.category = document.getElementById('editToolCategory').value.trim();
+            tool.location = document.getElementById('editToolLocation').value.trim();
+            tool.condition = document.getElementById('editToolCondition').value;
+            
+            if (currentImageData) {
+                tool.image = currentImageData;
+                currentImageData = null;
+            }
+
+            saveTool();
+            renderTools();
+            closeEditToolModal();
+            showNotification('Tool updated successfully!', 'success');
+        }
         function openAddStaffModal() {
             document.getElementById('addStaffModal').classList.add('active');
             document.getElementById('staffNameInput').value = '';
@@ -1635,6 +1798,7 @@
                 closeEditImageModal();
                 closeConditionModal();
                 closeAddStaffModal();
+                closeEditToolModal();
             }
         });
 
