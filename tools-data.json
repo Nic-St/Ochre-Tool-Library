@@ -10,5 +10,17 @@
     "checkedOutDate": null,
     "expectedReturn": null,
     "notes": null
+  },
+  {
+    "id": 1772798472588,
+    "name": "B Tool",
+    "category": "Power Drills",
+    "location": "Shed",
+    "condition": "maintenance",
+    "image": null,
+    "checkedOutBy": null,
+    "checkedOutDate": null,
+    "expectedReturn": null,
+    "notes": null
   }
 ]
