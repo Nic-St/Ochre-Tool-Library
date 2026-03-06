@@ -955,48 +955,67 @@
         // Save staff list to GitHub
         async function saveStaffToGitHub() {
             if (!GITHUB_TOKEN) {
-                showNotification('GitHub token not configured', 'error');
+                console.log('No GitHub token set, skipping staff sync');
                 return false;
             }
 
             try {
-                const staffData = { staff: staff };
-                const content = JSON.stringify(staffData, null, 2);
-                const encodedContent = btoa(content);
-
-                // Get current SHA
-                const shaResponse = await fetch(
-                    'https://api.github.com/repos/Nic-St/Ochre-Tool-Library/contents/staff.json',
-                    { headers: { 'Authorization': `Bearer ${GITHUB_TOKEN}` } }
-                );
+                const url = 'https://api.github.com/repos/Nic-St/Ochre-Tool-Library/contents/staff.json';
                 
+                // Get current file SHA - MUST wait for this
                 let sha = null;
-                if (shaResponse.ok) {
-                    const shaData = await shaResponse.json();
-                    sha = shaData.sha;
+                try {
+                    const getResponse = await fetch(url, {
+                        headers: {
+                            'Authorization': `token ${GITHUB_TOKEN}`,
+                            'Accept': 'application/vnd.github.v3+json'
+                        }
+                    });
+                    if (getResponse.ok) {
+                        const data = await getResponse.json();
+                        sha = data.sha;
+                        console.log('Retrieved staff.json SHA:', sha);
+                    } else {
+                        console.warn('Could not get existing staff.json (status ' + getResponse.status + ') - file may not exist yet');
+                    }
+                } catch (e) {
+                    console.warn('Error getting SHA:', e.message);
                 }
 
-                // Update file
-                const updateResponse = await fetch(
-                    'https://api.github.com/repos/Nic-St/Ochre-Tool-Library/contents/staff.json',
-                    {
-                        method: 'PUT',
-                        headers: {
-                            'Authorization': `Bearer ${GITHUB_TOKEN}`,
-                            'Content-Type': 'application/json'
-                        },
-                        body: JSON.stringify({
-                            message: 'Update staff list',
-                            content: encodedContent,
-                            sha: sha
-                        })
-                    }
-                );
+                // If we still don't have a SHA, we can't update
+                if (!sha) {
+                    console.error('Failed to get staff.json SHA - cannot update');
+                    return false;
+                }
 
-                if (updateResponse.ok) {
+                const staffData = { staff: staff };
+                const content = btoa(unescape(encodeURIComponent(JSON.stringify(staffData, null, 2))));
+                
+                const requestBody = {
+                    message: 'Update staff list',
+                    content: content,
+                    branch: 'main',
+                    sha: sha
+                };
+                
+                console.log('Sending staff update with SHA:', sha);
+                
+                const response = await fetch(url, {
+                    method: 'PUT',
+                    headers: {
+                        'Authorization': `token ${GITHUB_TOKEN}`,
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify(requestBody)
+                });
+
+                if (response.ok) {
+                    console.log('Staff list synced to GitHub successfully');
                     return true;
                 } else {
-                    console.error('Failed to update staff.json');
+                    const errorText = await response.text();
+                    console.error('GitHub staff save error:', response.status, response.statusText);
+                    console.error('Response:', errorText);
                     return false;
                 }
             } catch (error) {
