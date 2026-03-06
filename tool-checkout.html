@@ -179,6 +179,7 @@
             background: #fafafa;
             display: flex;
             gap: 16px;
+            align-items: flex-end;
         }
 
         .tool-item:hover {
@@ -291,13 +292,21 @@
         }
 
         .tool-image {
-            width: 120px;
-            height: 120px;
+            width: 158px;
+            height: 158px;
             object-fit: cover;
             margin-right: 16px;
             border: 2px solid var(--border);
             border-radius: 0;
             flex-shrink: 0;
+            cursor: pointer;
+            transition: all 0.3s;
+            margin-top: 3px;
+        }
+
+        .tool-image:hover {
+            border-color: var(--accent);
+            box-shadow: 0 0 10px rgba(255, 107, 53, 0.3);
         }
 
         .tool-image-upload {
@@ -1090,7 +1099,9 @@
             } else {
                 toolsList.innerHTML = filtered.map(tool => `
                     <div class="tool-item">
-                        ${tool.image ? `<img src="${tool.image}" alt="${tool.name}" class="tool-image">` : ''}
+                        <div class="tool-image" onclick="openEditImageModal(${tool.id})" style="${tool.image ? `background-image: url('${tool.image}'); background-size: cover;` : `background: linear-gradient(135deg, #ff6b35 0%, #d94f1f 100%); display: flex; align-items: center; justify-content: center; color: white; font-size: 3em;`}">
+                            ${tool.image ? '' : '📦'}
+                        </div>
                         <div class="tool-content">
                             <div class="tool-header">
                                 <div>
@@ -1112,7 +1123,6 @@
                                 ${tool.condition === 'good' ? '✓ Good Condition' : tool.condition === 'maintenance' ? '⚠️ Needs Maintenance' : tool.condition === 'damaged' ? '✕ Damaged' : '? Set Condition'}
                             </div>
                             <div class="tool-actions">
-                                <button class="btn btn-edit-image" onclick="openEditImageModal(${tool.id})">📷 ${tool.image ? 'Update' : 'Add'} Image</button>
                                 ${tool.checkedOutBy ? 
                                     `<button class="btn btn-success" onclick="openReturnModal(${tool.id})">Return</button>` :
                                     `<button class="btn btn-primary" onclick="openCheckoutModal(${tool.id})">Check Out</button>`
