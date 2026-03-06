@@ -828,6 +828,16 @@
                 </select>
             </div>
             <div class="form-group">
+                <label>Checkout Duration</label>
+                <select id="checkoutDuration" required>
+                    <option value="">-- Select expected return time --</option>
+                    <option value="Full Day">Full Day</option>
+                    <option value="2-3 Days">2-3 Days</option>
+                    <option value="1 Week">1 Week</option>
+                    <option value="Not Sure">Not Sure</option>
+                </select>
+            </div>
+            <div class="form-group">
                 <label>Notes (optional)</label>
                 <input type="text" id="checkoutNotes" placeholder="e.g. On site A, back by 3pm">
             </div>
@@ -924,6 +934,7 @@
         let currentImageData = null;
         let staff = [];
         let currentStaff = localStorage.getItem('selectedStaff') || '';
+        const checkoutDurations = ['Full Day', '2-3 Days', '1 Week', 'Not Sure'];
         let isInitialized = false;
 
         // Load staff list from GitHub
@@ -943,7 +954,7 @@
 
         // Save staff list to GitHub
         async function saveStaffToGitHub() {
-            if (!githubToken) {
+            if (!GITHUB_TOKEN) {
                 showNotification('GitHub token not configured', 'error');
                 return false;
             }
@@ -956,7 +967,7 @@
                 // Get current SHA
                 const shaResponse = await fetch(
                     'https://api.github.com/repos/Nic-St/Ochre-Tool-Library/contents/staff.json',
-                    { headers: { 'Authorization': `Bearer ${githubToken}` } }
+                    { headers: { 'Authorization': `Bearer ${GITHUB_TOKEN}` } }
                 );
                 
                 let sha = null;
@@ -971,7 +982,7 @@
                     {
                         method: 'PUT',
                         headers: {
-                            'Authorization': `Bearer ${githubToken}`,
+                            'Authorization': `Bearer ${GITHUB_TOKEN}`,
                             'Content-Type': 'application/json'
                         },
                         body: JSON.stringify({
@@ -1196,6 +1207,7 @@
                 image: currentImageData || null,
                 checkedOutBy: null,
                 checkedOutDate: null,
+                expectedReturn: null,
                 notes: null
             };
             tools.push(tool);
@@ -1251,7 +1263,7 @@
                             </div>
                             <div class="tool-info">
                                 ${tool.checkedOutBy ? 
-                                    `<strong>Checked out by:</strong> ${tool.checkedOutBy}<br><strong>Date:</strong> ${tool.checkedOutDate}` :
+                                    `<strong>Checked out by:</strong> ${tool.checkedOutBy}<br><strong>Date:</strong> ${tool.checkedOutDate}${tool.expectedReturn ? `<br><strong>Expected Return:</strong> ${tool.expectedReturn}` : ''}` :
                                     `<strong>Location:</strong> ${tool.location}`
                                 }
                             </div>
@@ -1266,8 +1278,8 @@
                                 <button class="btn btn-danger" onclick="deleteTool(${tool.id})">Delete</button>
                             </div>
                         </div>
-                        <div class="tool-notebox ${tool.notes ? 'with-content' : ''}">
-                            ${tool.notes ? `<div><strong>Notes</strong>${tool.notes}</div>` : 'No notes'}
+                        <div class="tool-notebox ${tool.notes || tool.expectedReturn ? 'with-content' : ''}">
+                            ${tool.notes || tool.expectedReturn ? `<div>${tool.notes ? `<div><strong>Notes</strong>${tool.notes}</div>` : ''}${tool.expectedReturn ? `<div style="margin-top: 12px;"><strong>Expected Return</strong><div style="color: var(--accent); font-weight: 700;">${tool.expectedReturn}</div></div>` : ''}</div>` : 'No notes'}
                         </div>
                     </div>
                 `).join('');
@@ -1290,10 +1302,17 @@
 
         function confirmCheckout() {
             const name = document.getElementById('checkoutName').value.trim();
+            const duration = document.getElementById('checkoutDuration').value.trim();
+            
             if (!name) {
                 showNotification('Please select your name', 'error');
                 return;
             }
+            if (!duration) {
+                showNotification('Please select checkout duration', 'error');
+                return;
+            }
+            
             // Save selected staff for next time
             localStorage.setItem('selectedStaff', name);
             currentStaff = name;
@@ -1301,6 +1320,7 @@
             const tool = tools.find(t => t.id === currentToolId);
             tool.checkedOutBy = name;
             tool.checkedOutDate = new Date().toLocaleDateString('en-AU');
+            tool.expectedReturn = duration;
             tool.notes = document.getElementById('checkoutNotes').value || null;
             saveTool();
             renderTools();
@@ -1322,6 +1342,7 @@
             const tool = tools.find(t => t.id === currentToolId);
             tool.checkedOutBy = null;
             tool.checkedOutDate = null;
+            tool.expectedReturn = null;
             tool.notes = null;
             saveTool();
             renderTools();
