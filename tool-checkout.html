@@ -180,6 +180,7 @@
             display: flex;
             gap: 16px;
             align-items: flex-end;
+            position: relative;
         }
 
         .tool-item:hover {
@@ -215,6 +216,9 @@
             font-weight: 700;
             text-transform: uppercase;
             letter-spacing: 1px;
+            position: absolute;
+            top: 16px;
+            right: 16px;
         }
 
         .tool-status.available {
@@ -1270,15 +1274,15 @@
                         <div class="tool-image" onclick="openEditImageModal(${tool.id})" style="${tool.image ? `background-image: url('${tool.image}'); background-size: cover;` : `background: linear-gradient(135deg, #ff6b35 0%, #d94f1f 100%); display: flex; align-items: center; justify-content: center; color: white; font-size: 3em;`}">
                             ${tool.image ? '' : '📦'}
                         </div>
+                        <span class="tool-status ${tool.checkedOutBy ? 'checked-out' : 'available'}">
+                            ${tool.checkedOutBy ? 'Checked Out' : 'Available'}
+                        </span>
                         <div class="tool-content">
                             <div class="tool-header">
                                 <div>
                                     <div class="tool-name">${tool.name}</div>
                                     <div class="tool-info">${tool.category}</div>
                                 </div>
-                                <span class="tool-status ${tool.checkedOutBy ? 'checked-out' : 'available'}">
-                                    ${tool.checkedOutBy ? 'Checked Out' : 'Available'}
-                                </span>
                             </div>
                             <div class="tool-info">
                                 ${tool.checkedOutBy ? 
@@ -1297,8 +1301,8 @@
                                 <button class="btn btn-danger" onclick="deleteTool(${tool.id})">Delete</button>
                             </div>
                         </div>
-                        <div class="tool-notebox ${tool.notes || tool.expectedReturn ? 'with-content' : ''}">
-                            ${tool.notes || tool.expectedReturn ? `<div>${tool.notes ? `<div><strong>Notes</strong>${tool.notes}</div>` : ''}${tool.expectedReturn ? `<div style="margin-top: 12px;"><strong>Expected Return</strong><div style="color: var(--accent); font-weight: 700;">${tool.expectedReturn}</div></div>` : ''}</div>` : 'No notes'}
+                        <div class="tool-notebox ${tool.notes ? 'with-content' : ''}">
+                            ${tool.notes ? `<div><strong>Notes</strong>${tool.notes}</div>` : 'No notes'}
                         </div>
                     </div>
                 `).join('');
