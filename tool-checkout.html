@@ -816,7 +816,8 @@
                 if (response.ok) {
                     console.log('Tools synced to GitHub');
                 } else {
-                    console.error('GitHub save error:', response.status, response.statusText);
+                    const errorText = await response.text();
+                    console.error('GitHub save error:', response.status, response.statusText, errorText);
                 }
             } catch (error) {
                 console.error('Error saving to GitHub:', error);
