@@ -44,5 +44,17 @@
     "checkedOutDate": null,
     "notes": null,
     "condition": "good"
+  },
+  {
+    "id": 1772797612894,
+    "name": "Belt Sander",
+    "category": "Sanders",
+    "location": "Shed",
+    "condition": "good",
+    "image": null,
+    "checkedOutBy": null,
+    "checkedOutDate": null,
+    "expectedReturn": null,
+    "notes": null
   }
 ]
