@@ -304,6 +304,38 @@
             flex-wrap: wrap;
         }
 
+        .condition-badge {
+            display: inline-block;
+            padding: 4px 12px;
+            border-radius: 0;
+            font-size: 0.75em;
+            font-weight: 700;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            margin-top: 8px;
+            cursor: pointer;
+            transition: opacity 0.3s;
+        }
+
+        .condition-badge:hover {
+            opacity: 0.8;
+        }
+
+        .condition-good {
+            background: #d4edda;
+            color: #155724;
+        }
+
+        .condition-maintenance {
+            background: #fff3cd;
+            color: #856404;
+        }
+
+        .condition-damaged {
+            background: #f8d7da;
+            color: #721c24;
+        }
+
         .tool-image {
             width: 120px;
             height: 120px;
@@ -652,6 +684,14 @@
                     <label>Location (when not checked out)</label>
                     <input type="text" id="toolLocation" placeholder="e.g. Shed Shelf B" required>
                 </div>
+                <div class="form-group">
+                    <label>Condition</label>
+                    <select id="toolCondition" required>
+                        <option value="good">Good Condition</option>
+                        <option value="maintenance">Needs Maintenance</option>
+                        <option value="damaged">Damaged</option>
+                    </select>
+                </div>
                 <div class="modal-buttons">
                     <button type="submit" class="btn btn-primary">Add Tool to Inventory</button>
                     <button type="button" class="btn btn-secondary" onclick="closeAddToolModal()">Cancel</button>
@@ -705,6 +745,25 @@
             <div class="modal-buttons">
                 <button class="btn btn-primary" onclick="confirmEditImage()">Save Image</button>
                 <button class="btn btn-secondary" onclick="closeEditImageModal()">Cancel</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Condition Modal -->
+    <div id="conditionModal" class="modal">
+        <div class="modal-content">
+            <h3>Change Condition</h3>
+            <div class="form-group">
+                <label>Select Condition:</label>
+                <select id="conditionSelect" required>
+                    <option value="good">Good Condition</option>
+                    <option value="maintenance">Needs Maintenance</option>
+                    <option value="damaged">Damaged</option>
+                </select>
+            </div>
+            <div class="modal-buttons">
+                <button class="btn btn-primary" onclick="confirmConditionChange()">Save</button>
+                <button class="btn btn-secondary" onclick="closeConditionModal()">Cancel</button>
             </div>
         </div>
     </div>
@@ -904,6 +963,7 @@
                 name: document.getElementById('toolName').value,
                 category: document.getElementById('toolCategory').value,
                 location: document.getElementById('toolLocation').value,
+                condition: document.getElementById('toolCondition').value || 'good',
                 image: currentImageData || null,
                 checkedOutBy: null,
                 checkedOutDate: null,
@@ -965,6 +1025,9 @@
                                 }
                             </div>
                             ${tool.notes ? `<div class="tool-info"><strong>Notes:</strong> ${tool.notes}</div>` : ''}
+                            <div class="condition-badge condition-${tool.condition}" onclick="openConditionModal(${tool.id})">
+                                ${tool.condition === 'good' ? '✓ Good Condition' : tool.condition === 'maintenance' ? '⚠️ Needs Maintenance' : '✕ Damaged'}
+                            </div>
                             <div class="tool-actions">
                                 <button class="btn btn-edit-image" onclick="openEditImageModal(${tool.id})">📷 ${tool.image ? 'Update' : 'Add'} Image</button>
                                 ${tool.checkedOutBy ? 
@@ -1063,6 +1126,29 @@
             showNotification(`Image updated for ${tool.name}!`, 'success');
         }
 
+        // Condition Modal
+        function openConditionModal(id) {
+            currentToolId = id;
+            const tool = tools.find(t => t.id === id);
+            document.getElementById('conditionSelect').value = tool.condition;
+            document.getElementById('conditionModal').classList.add('active');
+        }
+
+        function closeConditionModal() {
+            document.getElementById('conditionModal').classList.remove('active');
+        }
+
+        function confirmConditionChange() {
+            const newCondition = document.getElementById('conditionSelect').value;
+            const tool = tools.find(t => t.id === currentToolId);
+            tool.condition = newCondition;
+            saveTool();
+            renderTools();
+            closeConditionModal();
+            const conditionText = newCondition === 'good' ? 'Good Condition' : newCondition === 'maintenance' ? 'Needs Maintenance' : 'Damaged';
+            showNotification(`${tool.name} condition updated to: ${conditionText}`, 'success');
+        }
+
         // Delete Tool
         function deleteTool(id) {
             if (confirm('Delete this tool?')) {
@@ -1134,6 +1220,7 @@
                 closeCheckoutModal();
                 closeReturnModal();
                 closeEditImageModal();
+                closeConditionModal();
             }
         });
 
