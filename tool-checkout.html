@@ -1122,9 +1122,21 @@
         window.addEventListener('DOMContentLoaded', async () => {
             await initializeGitHub();
             renderTools();
-            // Refresh data every 10 seconds to pick up changes from other users
+            // Refresh data every 30 seconds to pick up changes from other users
+            // But only if user hasn't been active recently
+            let lastActivityTime = Date.now();
+            document.addEventListener('click', () => {
+                lastActivityTime = Date.now();
+            });
+            document.addEventListener('input', () => {
+                lastActivityTime = Date.now();
+            });
+            
             setInterval(async () => {
-                await loadToolsFromGitHub();
+                // Only refresh if user hasn't been active for 5 seconds
+                if (Date.now() - lastActivityTime > 5000) {
+                    await loadToolsFromGitHub();
+                }
             }, 10000);
         });
     </script>
