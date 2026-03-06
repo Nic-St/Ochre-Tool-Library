@@ -721,6 +721,7 @@
                     <h2>Actions</h2>
                     <div class="quick-actions">
                         <button class="btn btn-primary btn-lg" onclick="openAddToolModal()">➕ Add New Tool</button>
+                        <button class="btn btn-primary btn-lg" onclick="openAddStaffModal()">➕ Add Staff Member</button>
                         <button class="btn btn-secondary" onclick="exportData()">📥 Export List</button>
                         <button class="btn btn-secondary" onclick="clearAllData()">🗑️ Clear All</button>
                     </div>
@@ -789,7 +790,9 @@
             <h3>Check Out Tool</h3>
             <div class="form-group">
                 <label>Your Name</label>
-                <input type="text" id="checkoutName" placeholder="Your name">
+                <select id="checkoutName" required>
+                    <option value="">-- Select your name --</option>
+                </select>
             </div>
             <div class="form-group">
                 <label>Notes (optional)</label>
@@ -851,6 +854,21 @@
         </div>
     </div>
 
+    <!-- Add Staff Modal -->
+    <div id="addStaffModal" class="modal">
+        <div class="modal-content">
+            <h3>Add Staff Member</h3>
+            <div class="form-group">
+                <label>Staff Name</label>
+                <input type="text" id="staffNameInput" placeholder="e.g. David, Rachel, Tom" required>
+            </div>
+            <div class="modal-buttons">
+                <button class="btn btn-primary" onclick="confirmAddStaff()">Add Staff</button>
+                <button class="btn btn-secondary" onclick="closeAddStaffModal()">Cancel</button>
+            </div>
+        </div>
+    </div>
+
     <!-- Sync Indicator -->
     <div class="sync-indicator">
         <div class="sync-dot"></div>
@@ -871,9 +889,95 @@
         let tools = [];
         let currentToolId = null;
         let currentImageData = null;
+        let staff = [];
+        let currentStaff = localStorage.getItem('selectedStaff') || '';
         let isInitialized = false;
 
-        // Initialize GitHub Token on first load
+        // Load staff list from GitHub
+        async function loadStaff() {
+            try {
+                const response = await fetch('https://raw.githubusercontent.com/Nic-St/Ochre-Tool-Library/main/staff.json');
+                if (response.ok) {
+                    const data = await response.json();
+                    staff = data.staff || [];
+                    populateStaffDropdown();
+                }
+            } catch (error) {
+                console.error('Error loading staff list:', error);
+                staff = [];
+            }
+        }
+
+        // Save staff list to GitHub
+        async function saveStaffToGitHub() {
+            if (!githubToken) {
+                showNotification('GitHub token not configured', 'error');
+                return false;
+            }
+
+            try {
+                const staffData = { staff: staff };
+                const content = JSON.stringify(staffData, null, 2);
+                const encodedContent = btoa(content);
+
+                // Get current SHA
+                const shaResponse = await fetch(
+                    'https://api.github.com/repos/Nic-St/Ochre-Tool-Library/contents/staff.json',
+                    { headers: { 'Authorization': `Bearer ${githubToken}` } }
+                );
+                
+                let sha = null;
+                if (shaResponse.ok) {
+                    const shaData = await shaResponse.json();
+                    sha = shaData.sha;
+                }
+
+                // Update file
+                const updateResponse = await fetch(
+                    'https://api.github.com/repos/Nic-St/Ochre-Tool-Library/contents/staff.json',
+                    {
+                        method: 'PUT',
+                        headers: {
+                            'Authorization': `Bearer ${githubToken}`,
+                            'Content-Type': 'application/json'
+                        },
+                        body: JSON.stringify({
+                            message: 'Update staff list',
+                            content: encodedContent,
+                            sha: sha
+                        })
+                    }
+                );
+
+                if (updateResponse.ok) {
+                    return true;
+                } else {
+                    console.error('Failed to update staff.json');
+                    return false;
+                }
+            } catch (error) {
+                console.error('Error saving staff to GitHub:', error);
+                return false;
+            }
+        }
+
+        // Populate staff dropdown in checkout modal
+        function populateStaffDropdown() {
+            const dropdown = document.getElementById('checkoutName');
+            if (dropdown) {
+                dropdown.innerHTML = '<option value="">-- Select your name --</option>';
+                staff.forEach(name => {
+                    const option = document.createElement('option');
+                    option.value = name;
+                    option.textContent = name;
+                    dropdown.appendChild(option);
+                });
+                // Set to last selected staff if available
+                if (currentStaff && staff.includes(currentStaff)) {
+                    dropdown.value = currentStaff;
+                }
+            }
+        }
         async function initializeGitHub() {
             if (!GITHUB_TOKEN) {
                 GITHUB_TOKEN = prompt('Enter your GitHub Personal Access Token:\n(Create one at github.com → Settings → Developer settings → Personal access tokens)');
@@ -1139,22 +1243,26 @@
         // Checkout Modal
         function openCheckoutModal(id) {
             currentToolId = id;
+            populateStaffDropdown();
             document.getElementById('checkoutModal').classList.add('active');
             document.getElementById('checkoutName').focus();
         }
 
         function closeCheckoutModal() {
             document.getElementById('checkoutModal').classList.remove('active');
-            document.getElementById('checkoutName').value = '';
             document.getElementById('checkoutNotes').value = '';
         }
 
         function confirmCheckout() {
             const name = document.getElementById('checkoutName').value.trim();
             if (!name) {
-                showNotification('Please enter your name', 'error');
+                showNotification('Please select your name', 'error');
                 return;
             }
+            // Save selected staff for next time
+            localStorage.setItem('selectedStaff', name);
+            currentStaff = name;
+            
             const tool = tools.find(t => t.id === currentToolId);
             tool.checkedOutBy = name;
             tool.checkedOutDate = new Date().toLocaleDateString('en-AU');
@@ -1219,7 +1327,45 @@
             showNotification(`Image updated for ${tool.name}!`, 'success');
         }
 
-        // Condition Modal
+        // Add Staff Modal
+        function openAddStaffModal() {
+            document.getElementById('addStaffModal').classList.add('active');
+            document.getElementById('staffNameInput').value = '';
+            document.getElementById('staffNameInput').focus();
+        }
+
+        function closeAddStaffModal() {
+            document.getElementById('addStaffModal').classList.remove('active');
+        }
+
+        async function confirmAddStaff() {
+            const name = document.getElementById('staffNameInput').value.trim();
+            if (!name) {
+                showNotification('Please enter a staff name', 'error');
+                return;
+            }
+
+            // Check if staff member already exists
+            if (staff.includes(name)) {
+                showNotification(`${name} is already in the staff list`, 'error');
+                return;
+            }
+
+            // Add to local list
+            staff.push(name);
+
+            // Save to GitHub
+            const saved = await saveStaffToGitHub();
+            if (saved) {
+                populateStaffDropdown();
+                closeAddStaffModal();
+                showNotification(`${name} has been added to staff list!`, 'success');
+            } else {
+                // Remove from local list if save failed
+                staff = staff.filter(s => s !== name);
+                showNotification('Failed to add staff member. Check GitHub token.', 'error');
+            }
+        }
         function openConditionModal(id) {
             currentToolId = id;
             const tool = tools.find(t => t.id === id);
@@ -1314,12 +1460,14 @@
                 closeReturnModal();
                 closeEditImageModal();
                 closeConditionModal();
+                closeAddStaffModal();
             }
         });
 
         // Initial render and GitHub sync
         window.addEventListener('DOMContentLoaded', async () => {
             await initializeGitHub();
+            await loadStaff();
             renderTools();
             
             // Track last update time for display
