@@ -780,10 +780,10 @@
             try {
                 const url = `https://api.github.com/repos/${GITHUB_OWNER}/${GITHUB_REPO}/contents/${GITHUB_FILE}`;
                 
-                // Get current file SHA if it exists
+                // Get current file SHA - this is required for updates
                 let sha = null;
                 try {
-                    const getResponse = await fetch(url + `?ref=${GITHUB_BRANCH}`, {
+                    const getResponse = await fetch(url, {
                         headers: {
                             'Authorization': `token ${GITHUB_TOKEN}`,
                             'Accept': 'application/vnd.github.v3+json'
@@ -792,12 +792,26 @@
                     if (getResponse.ok) {
                         const data = await getResponse.json();
                         sha = data.sha;
+                        console.log('Retrieved file SHA:', sha);
+                    } else {
+                        console.log('Could not get existing file SHA:', getResponse.status);
                     }
                 } catch (e) {
-                    // File doesn't exist yet
+                    console.log('Error getting SHA:', e);
                 }
 
                 const content = btoa(unescape(encodeURIComponent(JSON.stringify(tools, null, 2))));
+                
+                const requestBody = {
+                    message: 'Update tool inventory',
+                    content: content,
+                    branch: GITHUB_BRANCH
+                };
+                
+                // Only include SHA if we have it
+                if (sha) {
+                    requestBody.sha = sha;
+                }
                 
                 const response = await fetch(url, {
                     method: 'PUT',
@@ -805,12 +819,7 @@
                         'Authorization': `token ${GITHUB_TOKEN}`,
                         'Content-Type': 'application/json'
                     },
-                    body: JSON.stringify({
-                        message: 'Update tool inventory',
-                        content: content,
-                        branch: GITHUB_BRANCH,
-                        ...(sha && { sha: sha })
-                    })
+                    body: JSON.stringify(requestBody)
                 });
 
                 if (response.ok) {
