@@ -1,0 +1,989 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Ochre Trade Services Tool Library</title>
+    <link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@500;700&family=Syne:wght@400;700;800&display=swap" rel="stylesheet">
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        :root {
+            --primary: #1a1a1a;
+            --accent: #ff6b35;
+            --accent-dark: #d94f1f;
+            --success: #2ecc71;
+            --warning: #f39c12;
+            --danger: #e74c3c;
+            --light-bg: #f5f5f5;
+            --border: #ddd;
+            --text: #333;
+            --text-light: #777;
+        }
+
+        body {
+            font-family: 'IBM Plex Mono', monospace;
+            background: linear-gradient(135deg, #0f0f0f 0%, #1a1a1a 100%);
+            color: var(--text);
+            min-height: 100vh;
+            padding: 20px;
+        }
+
+        .container {
+            max-width: 1400px;
+            margin: 0 auto;
+        }
+
+        /* Header */
+        header {
+            margin-bottom: 40px;
+            border-bottom: 3px solid var(--accent);
+            padding-bottom: 20px;
+            animation: slideDown 0.6s ease-out;
+        }
+
+        @keyframes slideDown {
+            from {
+                transform: translateY(-20px);
+                opacity: 0;
+            }
+            to {
+                transform: translateY(0);
+                opacity: 1;
+            }
+        }
+
+        h1 {
+            font-family: 'Syne', sans-serif;
+            font-size: 2.5em;
+            font-weight: 800;
+            color: #fff;
+            margin-bottom: 5px;
+            letter-spacing: -1px;
+        }
+
+        .header-subtitle {
+            color: var(--text-light);
+            font-size: 0.9em;
+            text-transform: uppercase;
+            letter-spacing: 2px;
+        }
+
+        /* Main Layout */
+        .main-grid {
+            display: grid;
+            grid-template-columns: 1fr 350px;
+            gap: 30px;
+            margin-bottom: 40px;
+        }
+
+        @media (max-width: 1024px) {
+            .main-grid {
+                grid-template-columns: 1fr;
+            }
+        }
+
+        /* Panel Styling */
+        .panel {
+            background: white;
+            border-radius: 0;
+            border: 2px solid var(--primary);
+            box-shadow: 0 10px 40px rgba(0, 0, 0, 0.15);
+            padding: 30px;
+            animation: fadeInUp 0.6s ease-out;
+        }
+
+        @keyframes fadeInUp {
+            from {
+                transform: translateY(20px);
+                opacity: 0;
+            }
+            to {
+                transform: translateY(0);
+                opacity: 1;
+            }
+        }
+
+        .panel h2 {
+            font-family: 'Syne', sans-serif;
+            font-size: 1.4em;
+            font-weight: 700;
+            margin-bottom: 20px;
+            padding-bottom: 15px;
+            border-bottom: 2px solid var(--accent);
+            color: var(--primary);
+        }
+
+        /* Form Controls */
+        .form-group {
+            margin-bottom: 16px;
+        }
+
+        .form-group label {
+            display: block;
+            font-weight: 700;
+            margin-bottom: 6px;
+            color: var(--primary);
+            font-size: 0.9em;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+
+        .form-group input,
+        .form-group select {
+            width: 100%;
+            padding: 12px;
+            border: 2px solid var(--border);
+            border-radius: 0;
+            font-family: 'IBM Plex Mono', monospace;
+            font-size: 0.95em;
+            transition: border-color 0.3s;
+        }
+
+        .form-group input:focus,
+        .form-group select:focus {
+            outline: none;
+            border-color: var(--accent);
+            box-shadow: 0 0 0 3px rgba(255, 107, 53, 0.1);
+        }
+
+        /* Buttons */
+        .btn {
+            padding: 12px 24px;
+            border: none;
+            border-radius: 0;
+            font-family: 'Syne', sans-serif;
+            font-weight: 700;
+            font-size: 0.95em;
+            cursor: pointer;
+            transition: all 0.3s;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+        }
+
+        .btn-primary {
+            background: var(--accent);
+            color: white;
+            width: 100%;
+        }
+
+        .btn-primary:hover {
+            background: var(--accent-dark);
+            transform: translateY(-2px);
+            box-shadow: 0 8px 20px rgba(255, 107, 53, 0.3);
+        }
+
+        .btn-secondary {
+            background: var(--light-bg);
+            color: var(--primary);
+            border: 2px solid var(--border);
+            padding: 10px 16px;
+            font-size: 0.85em;
+        }
+
+        .btn-secondary:hover {
+            background: #eee;
+            border-color: var(--primary);
+        }
+
+        .btn-danger {
+            background: var(--danger);
+            color: white;
+            padding: 8px 12px;
+            font-size: 0.8em;
+        }
+
+        .btn-danger:hover {
+            background: #c0392b;
+        }
+
+        .btn-success {
+            background: var(--success);
+            color: white;
+            padding: 8px 12px;
+            font-size: 0.8em;
+        }
+
+        .btn-success:hover {
+            background: #27ae60;
+        }
+
+        /* Tool List */
+        .tools-list {
+            display: grid;
+            gap: 16px;
+        }
+
+        .tool-item {
+            border: 2px solid var(--border);
+            padding: 16px;
+            border-radius: 0;
+            transition: all 0.3s;
+            background: #fafafa;
+            display: flex;
+            gap: 16px;
+        }
+
+        .tool-item:hover {
+            border-color: var(--accent);
+            background: white;
+            box-shadow: 0 4px 12px rgba(255, 107, 53, 0.1);
+        }
+
+        .tool-content {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+        }
+
+        .tool-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: flex-start;
+            margin-bottom: 10px;
+        }
+
+        .tool-name {
+            font-family: 'Syne', sans-serif;
+            font-weight: 700;
+            font-size: 1.1em;
+            color: var(--primary);
+        }
+
+        .tool-status {
+            padding: 4px 12px;
+            border-radius: 0;
+            font-size: 0.75em;
+            font-weight: 700;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+        }
+
+        .tool-status.available {
+            background: #d4edda;
+            color: #155724;
+        }
+
+        .tool-status.checked-out {
+            background: #fff3cd;
+            color: #856404;
+        }
+
+        .tool-info {
+            font-size: 0.9em;
+            color: var(--text-light);
+            margin-bottom: 8px;
+            line-height: 1.5;
+        }
+
+        .tool-info strong {
+            color: var(--primary);
+        }
+
+        .tool-actions {
+            display: flex;
+            gap: 8px;
+            margin-top: 12px;
+            flex-wrap: wrap;
+        }
+
+        .tool-image {
+            width: 120px;
+            height: 120px;
+            object-fit: cover;
+            margin-right: 16px;
+            border: 2px solid var(--border);
+            border-radius: 0;
+            flex-shrink: 0;
+        }
+
+        .tool-image-upload {
+            margin-bottom: 16px;
+        }
+
+        .image-preview {
+            width: 100%;
+            height: 150px;
+            border: 2px dashed var(--accent);
+            border-radius: 0;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            margin-top: 8px;
+            background: #fafafa;
+            color: var(--text-light);
+            position: relative;
+            overflow: hidden;
+        }
+
+        .image-preview img {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+        }
+
+        .image-upload-label {
+            display: block;
+            padding: 12px;
+            background: var(--light-bg);
+            border: 2px solid var(--border);
+            cursor: pointer;
+            text-align: center;
+            font-weight: 700;
+            transition: all 0.3s;
+            margin-top: 8px;
+        }
+
+        .image-upload-label:hover {
+            border-color: var(--accent);
+            background: #f0f0f0;
+        }
+
+        #toolImage {
+            display: none;
+        }
+
+        .btn-edit-image {
+            background: #4a90e2;
+            color: white;
+            padding: 6px 10px;
+            font-size: 0.75em;
+        }
+
+        .btn-edit-image:hover {
+            background: #357abd;
+        }
+
+        .btn-lg {
+            width: 100%;
+            padding: 14px 24px;
+            font-size: 1em;
+        }
+
+        /* Sidebar */
+        .sidebar {
+            display: flex;
+            flex-direction: column;
+            gap: 20px;
+        }
+
+        .stats-box {
+            background: white;
+            border: 2px solid var(--primary);
+            padding: 20px;
+            border-radius: 0;
+            text-align: center;
+        }
+
+        .stats-number {
+            font-family: 'Syne', sans-serif;
+            font-size: 2.5em;
+            font-weight: 800;
+            color: var(--accent);
+            margin: 10px 0;
+        }
+
+        .stats-label {
+            font-size: 0.85em;
+            color: var(--text-light);
+            text-transform: uppercase;
+            letter-spacing: 1px;
+        }
+
+        .quick-actions {
+            display: flex;
+            flex-direction: column;
+            gap: 8px;
+        }
+
+        .quick-actions .btn {
+            font-size: 0.85em;
+            padding: 10px 16px;
+        }
+
+        /* Search Bar */
+        .search-container {
+            position: relative;
+            margin-bottom: 20px;
+        }
+
+        .search-container input {
+            width: 100%;
+            padding: 12px;
+            border: 2px solid var(--border);
+            border-radius: 0;
+            font-family: 'IBM Plex Mono', monospace;
+            font-size: 0.95em;
+        }
+
+        .search-container input:focus {
+            border-color: var(--accent);
+            outline: none;
+        }
+
+        /* Modal */
+        .modal {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: rgba(0, 0, 0, 0.7);
+            z-index: 1000;
+            align-items: center;
+            justify-content: center;
+            animation: fadeIn 0.3s;
+        }
+
+        .modal.active {
+            display: flex;
+        }
+
+        @keyframes fadeIn {
+            from { opacity: 0; }
+            to { opacity: 1; }
+        }
+
+        .modal-content {
+            background: white;
+            padding: 30px;
+            border-radius: 0;
+            border: 3px solid var(--accent);
+            max-width: 400px;
+            width: 90%;
+            animation: slideUp 0.3s;
+        }
+
+        @keyframes slideUp {
+            from {
+                transform: translateY(20px);
+                opacity: 0;
+            }
+            to {
+                transform: translateY(0);
+                opacity: 1;
+            }
+        }
+
+        .modal h3 {
+            font-family: 'Syne', sans-serif;
+            font-size: 1.3em;
+            margin-bottom: 20px;
+            color: var(--primary);
+        }
+
+        .modal-buttons {
+            display: flex;
+            gap: 12px;
+            margin-top: 20px;
+        }
+
+        .modal-buttons .btn {
+            flex: 1;
+            padding: 12px;
+        }
+
+        .modal-buttons .btn-secondary {
+            width: auto;
+        }
+
+        /* Empty State */
+        .empty-state {
+            text-align: center;
+            padding: 40px 20px;
+            color: var(--text-light);
+        }
+
+        .empty-state p {
+            font-size: 0.95em;
+            margin-bottom: 10px;
+        }
+
+        /* Notifications */
+        .notification {
+            position: fixed;
+            top: 20px;
+            right: 20px;
+            padding: 16px 24px;
+            border-radius: 0;
+            font-size: 0.9em;
+            animation: slideInRight 0.3s;
+            z-index: 2000;
+            border-left: 4px solid;
+        }
+
+        @keyframes slideInRight {
+            from {
+                transform: translateX(400px);
+                opacity: 0;
+            }
+            to {
+                transform: translateX(0);
+                opacity: 1;
+            }
+        }
+
+        .notification.success {
+            background: #d4edda;
+            color: #155724;
+            border-left-color: #28a745;
+        }
+
+        .notification.error {
+            background: #f8d7da;
+            color: #721c24;
+            border-left-color: #f5c6cb;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <!-- Header -->
+        <header>
+            <h1>🔧 Ochre Trade Services Tool Library</h1>
+            <p class="header-subtitle">Equipment & Power Tool Checkout</p>
+        </header>
+
+        <!-- Main Content -->
+        <div class="main-grid">
+            <!-- Left Panel - Tool List -->
+            <div>
+                <!-- Tools List Panel -->
+                <div class="panel">
+                    <h2>Inventory</h2>
+                    <div class="search-container">
+                        <input type="text" id="searchBox" placeholder="Search tools...">
+                    </div>
+                    <div id="toolsList" class="tools-list">
+                        <div class="empty-state">
+                            <p>No tools added yet. Click "Add Tool" to get started!</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Right Sidebar -->
+            <div class="sidebar">
+                <!-- Stats -->
+                <div class="stats-box">
+                    <div class="stats-label">Total Tools</div>
+                    <div class="stats-number" id="totalTools">0</div>
+                </div>
+
+                <div class="stats-box">
+                    <div class="stats-label">Available</div>
+                    <div class="stats-number" id="availableTools" style="color: var(--success);">0</div>
+                </div>
+
+                <div class="stats-box">
+                    <div class="stats-label">Checked Out</div>
+                    <div class="stats-number" id="checkedOutTools" style="color: var(--warning);">0</div>
+                </div>
+
+                <!-- Quick Actions -->
+                <div class="panel">
+                    <h2>Actions</h2>
+                    <div class="quick-actions">
+                        <button class="btn btn-primary btn-lg" onclick="openAddToolModal()">➕ Add New Tool</button>
+                        <button class="btn btn-secondary" onclick="exportData()">📥 Export List</button>
+                        <button class="btn btn-secondary" onclick="clearAllData()">🗑️ Clear All</button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Add Tool Modal -->
+    <div id="addToolModal" class="modal">
+        <div class="modal-content">
+            <h3>Add New Tool</h3>
+            <form id="addToolForm">
+                <div class="form-group tool-image-upload">
+                    <label>Tool Image</label>
+                    <div class="image-preview" id="imagePreview">
+                        <span>Click to upload image</span>
+                    </div>
+                    <label for="toolImage" class="image-upload-label">📷 Choose Image</label>
+                    <input type="file" id="toolImage" accept="image/*">
+                </div>
+                <div class="form-group">
+                    <label>Tool Name</label>
+                    <input type="text" id="toolName" placeholder="e.g. Makita Drill" required>
+                </div>
+                <div class="form-group">
+                    <label>Category</label>
+                    <select id="toolCategory" required>
+                        <option value="">Select Category</option>
+                        <option value="Power Drills">Power Drills</option>
+                        <option value="Saws">Saws</option>
+                        <option value="Sanders">Sanders</option>
+                        <option value="Impact Drivers">Impact Drivers</option>
+                        <option value="Nail Guns">Nail Guns</option>
+                        <option value="Grinders">Grinders</option>
+                        <option value="Hand Tools">Hand Tools</option>
+                        <option value="Measurement">Measurement</option>
+                        <option value="Climbing">Climbing/Access</option>
+                        <option value="Safety">Safety Equipment</option>
+                        <option value="Other">Other</option>
+                    </select>
+                </div>
+                <div class="form-group">
+                    <label>Location (when not checked out)</label>
+                    <input type="text" id="toolLocation" placeholder="e.g. Shed Shelf B" required>
+                </div>
+                <div class="modal-buttons">
+                    <button type="submit" class="btn btn-primary">Add Tool to Inventory</button>
+                    <button type="button" class="btn btn-secondary" onclick="closeAddToolModal()">Cancel</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- Checkout Modal -->
+    <div id="checkoutModal" class="modal">
+        <div class="modal-content">
+            <h3>Check Out Tool</h3>
+            <div class="form-group">
+                <label>Your Name</label>
+                <input type="text" id="checkoutName" placeholder="Your name">
+            </div>
+            <div class="form-group">
+                <label>Notes (optional)</label>
+                <input type="text" id="checkoutNotes" placeholder="e.g. On site A, back by 3pm">
+            </div>
+            <div class="modal-buttons">
+                <button class="btn btn-primary" onclick="confirmCheckout()">Confirm Checkout</button>
+                <button class="btn btn-secondary" onclick="closeCheckoutModal()">Cancel</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Return Modal -->
+    <div id="returnModal" class="modal">
+        <div class="modal-content">
+            <h3>Return Tool</h3>
+            <p style="margin-bottom: 15px; color: #666;">Are you sure you want to return this tool?</p>
+            <div class="modal-buttons">
+                <button class="btn btn-success" onclick="confirmReturn()">Return to Shed</button>
+                <button class="btn btn-secondary" onclick="closeReturnModal()">Cancel</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Edit Image Modal -->
+    <div id="editImageModal" class="modal">
+        <div class="modal-content">
+            <h3>Add/Update Tool Image</h3>
+            <div class="form-group tool-image-upload">
+                <div class="image-preview" id="editImagePreview">
+                    <span>Click to upload image</span>
+                </div>
+                <label for="editToolImage" class="image-upload-label">📷 Choose Image</label>
+                <input type="file" id="editToolImage" accept="image/*">
+            </div>
+            <div class="modal-buttons">
+                <button class="btn btn-primary" onclick="confirmEditImage()">Save Image</button>
+                <button class="btn btn-secondary" onclick="closeEditImageModal()">Cancel</button>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        let tools = JSON.parse(localStorage.getItem('tools')) || [];
+        let currentToolId = null;
+        let currentImageData = null;
+
+        // Image Upload Handler
+        document.getElementById('toolImage').addEventListener('change', function(e) {
+            const file = e.target.files[0];
+            if (file) {
+                const reader = new FileReader();
+                reader.onload = function(event) {
+                    currentImageData = event.target.result;
+                    const preview = document.getElementById('imagePreview');
+                    preview.innerHTML = `<img src="${currentImageData}" alt="Preview">`;
+                };
+                reader.readAsDataURL(file);
+            }
+        });
+
+        // Edit Image Upload Handler
+        document.getElementById('editToolImage').addEventListener('change', function(e) {
+            const file = e.target.files[0];
+            if (file) {
+                const reader = new FileReader();
+                reader.onload = function(event) {
+                    currentImageData = event.target.result;
+                    const preview = document.getElementById('editImagePreview');
+                    preview.innerHTML = `<img src="${currentImageData}" alt="Preview">`;
+                };
+                reader.readAsDataURL(file);
+            }
+        });
+
+        // Image Preview Click
+        document.getElementById('imagePreview').addEventListener('click', function() {
+            document.getElementById('toolImage').click();
+        });
+
+        // Edit Image Preview Click
+        document.getElementById('editImagePreview').addEventListener('click', function() {
+            document.getElementById('editToolImage').click();
+        });
+
+        // Add Tool
+        document.getElementById('addToolForm').addEventListener('submit', (e) => {
+            e.preventDefault();
+            const tool = {
+                id: Date.now(),
+                name: document.getElementById('toolName').value,
+                category: document.getElementById('toolCategory').value,
+                location: document.getElementById('toolLocation').value,
+                image: currentImageData || null,
+                checkedOutBy: null,
+                checkedOutDate: null,
+                notes: null
+            };
+            tools.push(tool);
+            saveTool();
+            document.getElementById('addToolForm').reset();
+            document.getElementById('imagePreview').innerHTML = '<span>Click to upload image</span>';
+            currentImageData = null;
+            renderTools();
+            closeAddToolModal();
+            showNotification('Tool added successfully!', 'success');
+        });
+
+        // Add Tool Modal
+        function openAddToolModal() {
+            document.getElementById('addToolModal').classList.add('active');
+            document.getElementById('toolName').focus();
+        }
+
+        function closeAddToolModal() {
+            document.getElementById('addToolModal').classList.remove('active');
+            document.getElementById('addToolForm').reset();
+            document.getElementById('imagePreview').innerHTML = '<span>Click to upload image</span>';
+            document.getElementById('toolImage').value = '';
+            currentImageData = null;
+        }
+
+        // Render Tools
+        function renderTools() {
+            const searchTerm = document.getElementById('searchBox').value.toLowerCase();
+            const filtered = tools.filter(t => 
+                t.name.toLowerCase().includes(searchTerm) || 
+                t.category.toLowerCase().includes(searchTerm)
+            );
+
+            const toolsList = document.getElementById('toolsList');
+            if (filtered.length === 0) {
+                toolsList.innerHTML = '<div class="empty-state"><p>No tools found.</p></div>';
+            } else {
+                toolsList.innerHTML = filtered.map(tool => `
+                    <div class="tool-item">
+                        ${tool.image ? `<img src="${tool.image}" alt="${tool.name}" class="tool-image">` : ''}
+                        <div class="tool-content">
+                            <div class="tool-header">
+                                <div>
+                                    <div class="tool-name">${tool.name}</div>
+                                    <div class="tool-info">${tool.category}</div>
+                                </div>
+                                <span class="tool-status ${tool.checkedOutBy ? 'checked-out' : 'available'}">
+                                    ${tool.checkedOutBy ? 'Checked Out' : 'Available'}
+                                </span>
+                            </div>
+                            <div class="tool-info">
+                                ${tool.checkedOutBy ? 
+                                    `<strong>Checked out by:</strong> ${tool.checkedOutBy}<br><strong>Date:</strong> ${tool.checkedOutDate}` :
+                                    `<strong>Location:</strong> ${tool.location}`
+                                }
+                            </div>
+                            ${tool.notes ? `<div class="tool-info"><strong>Notes:</strong> ${tool.notes}</div>` : ''}
+                            <div class="tool-actions">
+                                <button class="btn btn-edit-image" onclick="openEditImageModal(${tool.id})">📷 ${tool.image ? 'Update' : 'Add'} Image</button>
+                                ${tool.checkedOutBy ? 
+                                    `<button class="btn btn-success" onclick="openReturnModal(${tool.id})">Return</button>` :
+                                    `<button class="btn btn-primary" onclick="openCheckoutModal(${tool.id})">Check Out</button>`
+                                }
+                                <button class="btn btn-danger" onclick="deleteTool(${tool.id})">Delete</button>
+                            </div>
+                        </div>
+                    </div>
+                `).join('');
+            }
+            updateStats();
+        }
+
+        // Checkout Modal
+        function openCheckoutModal(id) {
+            currentToolId = id;
+            document.getElementById('checkoutModal').classList.add('active');
+            document.getElementById('checkoutName').focus();
+        }
+
+        function closeCheckoutModal() {
+            document.getElementById('checkoutModal').classList.remove('active');
+            document.getElementById('checkoutName').value = '';
+            document.getElementById('checkoutNotes').value = '';
+        }
+
+        function confirmCheckout() {
+            const name = document.getElementById('checkoutName').value.trim();
+            if (!name) {
+                showNotification('Please enter your name', 'error');
+                return;
+            }
+            const tool = tools.find(t => t.id === currentToolId);
+            tool.checkedOutBy = name;
+            tool.checkedOutDate = new Date().toLocaleDateString();
+            tool.notes = document.getElementById('checkoutNotes').value || null;
+            saveTool();
+            renderTools();
+            closeCheckoutModal();
+            showNotification(`${tool.name} checked out successfully!`, 'success');
+        }
+
+        // Return Modal
+        function openReturnModal(id) {
+            currentToolId = id;
+            document.getElementById('returnModal').classList.add('active');
+        }
+
+        function closeReturnModal() {
+            document.getElementById('returnModal').classList.remove('active');
+        }
+
+        function confirmReturn() {
+            const tool = tools.find(t => t.id === currentToolId);
+            tool.checkedOutBy = null;
+            tool.checkedOutDate = null;
+            tool.notes = null;
+            saveTool();
+            renderTools();
+            closeReturnModal();
+            showNotification(`${tool.name} returned to shed!`, 'success');
+        }
+
+        // Edit Image Modal
+        function openEditImageModal(id) {
+            currentToolId = id;
+            const tool = tools.find(t => t.id === id);
+            const preview = document.getElementById('editImagePreview');
+            if (tool.image) {
+                preview.innerHTML = `<img src="${tool.image}" alt="Preview">`;
+            } else {
+                preview.innerHTML = '<span>Click to upload image</span>';
+            }
+            currentImageData = null;
+            document.getElementById('editToolImage').value = '';
+            document.getElementById('editImageModal').classList.add('active');
+        }
+
+        function closeEditImageModal() {
+            document.getElementById('editImageModal').classList.remove('active');
+            currentImageData = null;
+        }
+
+        function confirmEditImage() {
+            if (!currentImageData) {
+                showNotification('Please select an image', 'error');
+                return;
+            }
+            const tool = tools.find(t => t.id === currentToolId);
+            tool.image = currentImageData;
+            saveTool();
+            renderTools();
+            closeEditImageModal();
+            showNotification(`Image updated for ${tool.name}!`, 'success');
+        }
+
+        // Delete Tool
+        function deleteTool(id) {
+            if (confirm('Delete this tool?')) {
+                tools = tools.filter(t => t.id !== id);
+                saveTool();
+                renderTools();
+                showNotification('Tool deleted', 'success');
+            }
+        }
+
+        // Stats
+        function updateStats() {
+            document.getElementById('totalTools').textContent = tools.length;
+            document.getElementById('availableTools').textContent = tools.filter(t => !t.checkedOutBy).length;
+            document.getElementById('checkedOutTools').textContent = tools.filter(t => t.checkedOutBy).length;
+        }
+
+        // Search
+        document.getElementById('searchBox').addEventListener('input', renderTools);
+
+        // Save/Load
+        function saveTool() {
+            localStorage.setItem('tools', JSON.stringify(tools));
+        }
+
+        // Export
+        function exportData() {
+            const csv = [
+                ['Tool Name', 'Category', 'Status', 'Location/Checked Out By', 'Date', 'Notes']
+            ].concat(tools.map(t => [
+                t.name,
+                t.category,
+                t.checkedOutBy ? 'Checked Out' : 'Available',
+                t.checkedOutBy || t.location,
+                t.checkedOutDate || '',
+                t.notes || ''
+            ]));
+            
+            let csvContent = csv.map(row => row.map(cell => `"${cell}"`).join(',')).join('\n');
+            const blob = new Blob([csvContent], { type: 'text/csv' });
+            const url = window.URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = `tool-checkout-${new Date().toISOString().split('T')[0]}.csv`;
+            a.click();
+            showNotification('List exported!', 'success');
+        }
+
+        // Clear All
+        function clearAllData() {
+            if (confirm('Clear all tools? This cannot be undone.')) {
+                tools = [];
+                saveTool();
+                renderTools();
+                showNotification('All data cleared', 'success');
+            }
+        }
+
+        // Notifications
+        function showNotification(message, type) {
+            const notification = document.createElement('div');
+            notification.className = `notification ${type}`;
+            notification.textContent = message;
+            document.body.appendChild(notification);
+            setTimeout(() => {
+                notification.remove();
+            }, 3000);
+        }
+
+        // Close modals on escape
+        document.addEventListener('keydown', (e) => {
+            if (e.key === 'Escape') {
+                closeAddToolModal();
+                closeCheckoutModal();
+                closeReturnModal();
+                closeEditImageModal();
+            }
+        });
+
+        // Initial render
+        renderTools();
+    </script>
+</body>
+</html>
