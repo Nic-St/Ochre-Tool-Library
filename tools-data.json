@@ -41,15 +41,5 @@
     "checkedOutBy": null,
     "checkedOutDate": null,
     "notes": null
-  },
-  {
-    "id": 1772781609136,
-    "name": "Test",
-    "category": "Measurement",
-    "location": "Shjed",
-    "image": null,
-    "checkedOutBy": null,
-    "checkedOutDate": null,
-    "notes": null
   }
 ]
