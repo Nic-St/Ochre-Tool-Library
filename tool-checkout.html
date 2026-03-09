@@ -813,6 +813,20 @@
                     <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 16px;">
                         <h2 style="margin: 0;">Inventory</h2>
                         <div style="display: flex; gap: 12px; align-items: center;">
+                            <div style="display: flex; gap: 8px; padding-right: 12px; border-right: 2px solid var(--border);">
+                                <button onclick="filterByStatus('all')" style="background: #fafafa; border: 2px solid var(--border); padding: 8px 12px; text-align: center; border-radius: 2px; cursor: pointer; font-family: 'IBM Plex Mono', monospace; width: 60px; transition: all 0.2s; font-weight: 700;" id="filterTotal" onmouseover="this.style.transform='scale(1.05)'; this.style.boxShadow='0 2px 8px rgba(255, 107, 53, 0.2)';" onmouseout="this.style.transform='scale(1)'; this.style.boxShadow='none';">
+                                    <div style="font-size: 0.65em; text-transform: uppercase; letter-spacing: 1px; color: #999; font-weight: 700;">Total</div>
+                                    <div style="font-family: 'Syne', sans-serif; font-size: 1.3em; font-weight: 800; color: var(--primary);" id="totalToolsHeader">0</div>
+                                </button>
+                                <button onclick="filterByStatus('available')" style="background: #fafafa; border: 2px solid var(--border); padding: 8px 12px; text-align: center; border-radius: 2px; cursor: pointer; font-family: 'IBM Plex Mono', monospace; width: 60px; transition: all 0.2s; font-weight: 700;" id="filterAvailable" onmouseover="this.style.transform='scale(1.05)'; this.style.boxShadow='0 2px 8px rgba(255, 107, 53, 0.2)';" onmouseout="this.style.transform='scale(1)'; this.style.boxShadow='none';">
+                                    <div style="font-size: 0.65em; text-transform: uppercase; letter-spacing: 1px; color: #999; font-weight: 700;">Avail</div>
+                                    <div style="font-family: 'Syne', sans-serif; font-size: 1.3em; font-weight: 800; color: var(--success);" id="availableToolsHeader">0</div>
+                                </button>
+                                <button onclick="filterByStatus('out')" style="background: #fafafa; border: 2px solid var(--border); padding: 8px 12px; text-align: center; border-radius: 2px; cursor: pointer; font-family: 'IBM Plex Mono', monospace; width: 60px; transition: all 0.2s; font-weight: 700;" id="filterOut" onmouseover="this.style.transform='scale(1.05)'; this.style.boxShadow='0 2px 8px rgba(255, 107, 53, 0.2)';" onmouseout="this.style.transform='scale(1)'; this.style.boxShadow='none';">
+                                    <div style="font-size: 0.65em; text-transform: uppercase; letter-spacing: 1px; color: #999; font-weight: 700;">Out</div>
+                                    <div style="font-family: 'Syne', sans-serif; font-size: 1.3em; font-weight: 800; color: var(--warning);" id="checkedOutToolsHeader">0</div>
+                                </button>
+                            </div>
                             <select id="categoryFilter" onchange="changeCategoryFilter()" style="padding: 8px 12px; border: 2px solid var(--border); background: white; font-family: 'IBM Plex Mono', monospace; font-weight: 700; font-size: 0.8em; text-transform: uppercase; letter-spacing: 1px; cursor: pointer;">
                                 <option value="">-- All Categories --</option>
                             </select>
@@ -854,23 +868,6 @@
                     </div>
                 </div>
 
-                <!-- Stats -->
-                <div style="display: flex; gap: 12px;">
-                    <div class="stats-box">
-                        <div class="stats-label">Total Tools</div>
-                        <div class="stats-number" id="totalTools">0</div>
-                    </div>
-
-                    <div class="stats-box">
-                        <div class="stats-label">Available</div>
-                        <div class="stats-number" id="availableTools" style="color: var(--success);">0</div>
-                    </div>
-
-                    <div class="stats-box">
-                        <div class="stats-label">Checked Out</div>
-                        <div class="stats-number" id="checkedOutTools" style="color: var(--warning);">0</div>
-                    </div>
-                </div>
             </div>
         </div>
     </div>
@@ -1564,6 +1561,27 @@
         }
 
         // Render Tools
+        let currentStatusFilter = 'all';
+
+        function filterByStatus(status) {
+            currentStatusFilter = status;
+            
+            // Update button styling
+            document.getElementById('filterTotal').style.borderColor = status === 'all' ? 'var(--accent)' : 'var(--border)';
+            document.getElementById('filterTotal').style.borderWidth = status === 'all' ? '2px' : '2px';
+            document.getElementById('filterTotal').style.background = status === 'all' ? 'white' : '#fafafa';
+            
+            document.getElementById('filterAvailable').style.borderColor = status === 'available' ? 'var(--accent)' : 'var(--border)';
+            document.getElementById('filterAvailable').style.borderWidth = status === 'available' ? '2px' : '2px';
+            document.getElementById('filterAvailable').style.background = status === 'available' ? 'white' : '#fafafa';
+            
+            document.getElementById('filterOut').style.borderColor = status === 'out' ? 'var(--accent)' : 'var(--border)';
+            document.getElementById('filterOut').style.borderWidth = status === 'out' ? '2px' : '2px';
+            document.getElementById('filterOut').style.background = status === 'out' ? 'white' : '#fafafa';
+            
+            renderTools();
+        }
+
         function renderTools() {
             const searchTerm = document.getElementById('searchBox').value.toLowerCase();
             let filtered = tools.filter(t => 
@@ -1574,6 +1592,13 @@
             // Apply category filter
             if (selectedCategory) {
                 filtered = filtered.filter(t => t.category === selectedCategory);
+            }
+
+            // Apply status filter
+            if (currentStatusFilter === 'available') {
+                filtered = filtered.filter(t => !t.checkedOutBy);
+            } else if (currentStatusFilter === 'out') {
+                filtered = filtered.filter(t => t.checkedOutBy);
             }
 
             // Apply sorting
@@ -1904,9 +1929,13 @@
 
         // Stats
         function updateStats() {
-            document.getElementById('totalTools').textContent = tools.length;
-            document.getElementById('availableTools').textContent = tools.filter(t => !t.checkedOutBy).length;
-            document.getElementById('checkedOutTools').textContent = tools.filter(t => t.checkedOutBy).length;
+            const total = tools.length;
+            const available = tools.filter(t => !t.checkedOutBy).length;
+            const checkedOut = tools.filter(t => t.checkedOutBy).length;
+            
+            document.getElementById('totalToolsHeader').textContent = total;
+            document.getElementById('availableToolsHeader').textContent = available;
+            document.getElementById('checkedOutToolsHeader').textContent = checkedOut;
         }
 
         // Search
