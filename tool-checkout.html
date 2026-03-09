@@ -1114,7 +1114,8 @@
                 activityLog.pop();
             }
             // Save to localStorage as backup
-            const toSave = activityLog.map(item => ({
+            const toSave = activityLog.map((item, index) => ({
+                id: String(index + 1),
                 tool: item.tool,
                 person: item.person,
                 action: item.action,
@@ -1309,7 +1310,8 @@
         async function saveActivityToGitHub() {
             // Always save to localStorage first for redundancy
             try {
-                localStorage.setItem('activityLog', JSON.stringify(activityLog.map(item => ({
+                localStorage.setItem('activityLog', JSON.stringify(activityLog.map((item, index) => ({
+                    id: String(index + 1),
                     tool: item.tool,
                     person: item.person,
                     action: item.action,
@@ -1334,28 +1336,44 @@
                 // Get current file SHA - DECLARE OUTSIDE THE INNER TRY
                 let sha = null;
                 try {
-                    console.log('Getting existing file SHA...');
-                    const getResponse = await fetch(url, {
+                    console.log('Getting existing file SHA using git API...');
+                    // Use git blob API to get SHA without getting content
+                    const gitUrl = `https://api.github.com/repos/${GITHUB_OWNER}/${GITHUB_REPO}/git/trees/${GITHUB_BRANCH}`;
+                    const gitResponse = await fetch(gitUrl, {
                         headers: {
                             'Authorization': `token ${GITHUB_TOKEN}`
                         }
                     });
-                    console.log('GET response status:', getResponse.status);
-                    if (getResponse.ok) {
-                        const data = await getResponse.json();
-                        console.log('Full response data:', data);
-                        sha = data.sha;
-                        if (sha) {
-                            console.log('✅ Got existing activity file SHA:', sha.substring(0, 8) + '...');
+                    
+                    if (gitResponse.ok) {
+                        const treeData = await gitResponse.json();
+                        console.log('Git tree:', treeData);
+                        const activityFile = treeData.tree.find(item => item.path === 'activity-log.json');
+                        if (activityFile) {
+                            sha = activityFile.sha;
+                            console.log('✅ Got activity file SHA from git tree:', sha.substring(0, 8) + '...');
                         } else {
-                            console.error('❌ No SHA in response. Data:', JSON.stringify(data));
+                            console.log('⚠️ activity-log.json not found in tree, will create');
                         }
-                    } else if (getResponse.status === 404) {
-                        console.log('⚠️ Activity file does not exist yet, will create new file');
                     } else {
-                        console.error('❌ Unexpected response:', getResponse.status);
-                        const errText = await getResponse.text();
-                        console.error('Response:', errText);
+                        // Fallback: try the regular API
+                        console.log('⚠️ Git tree API failed, trying regular content API...');
+                        const getResponse = await fetch(url, {
+                            headers: {
+                                'Authorization': `token ${GITHUB_TOKEN}`,
+                                'Accept': 'application/vnd.github.v3+json'
+                            }
+                        });
+                        
+                        if (getResponse.ok) {
+                            const data = await getResponse.json();
+                            if (data.sha) {
+                                sha = data.sha;
+                                console.log('✅ Got existing activity file SHA:', sha.substring(0, 8) + '...');
+                            } else {
+                                console.warn('⚠️ Response has no SHA field. Keys:', Object.keys(data));
+                            }
+                        }
                     }
                 } catch (e) {
                     console.warn('⚠️ Error getting activity SHA:', e.message);
@@ -1363,7 +1381,8 @@
                 }
 
                 const activityData = {
-                    activity: activityLog.map(item => ({
+                    activity: activityLog.map((item, index) => ({
+                        id: String(index + 1),
                         tool: item.tool,
                         person: item.person,
                         action: item.action,
