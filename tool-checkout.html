@@ -1270,13 +1270,18 @@
                 
                 if (response.ok) {
                     const data = await response.json();
-                    activityLog = (data.activity || []).map(item => ({
-                        ...item,
-                        timestamp: new Date(item.timestamp)
-                    }));
-                    console.log('Loaded activity from GitHub:', activityLog.length, 'items');
+                    if (data.activity && Array.isArray(data.activity)) {
+                        activityLog = data.activity.map(item => ({
+                            ...item,
+                            timestamp: new Date(item.timestamp)
+                        }));
+                        console.log('✅ Loaded activity from GitHub:', activityLog.length, 'items');
+                    } else {
+                        console.warn('Activity data invalid, loading from localStorage');
+                        loadActivityFromLocalStorage();
+                    }
                 } else {
-                    console.warn('Could not load activity from GitHub, trying localStorage');
+                    console.warn('Could not load activity from GitHub (status ' + response.status + '), trying localStorage');
                     loadActivityFromLocalStorage();
                 }
             } catch (error) {
@@ -1330,26 +1335,34 @@
             try {
                 const url = `https://api.github.com/repos/${GITHUB_OWNER}/${GITHUB_REPO}/contents/activity-log.json`;
                 
-                // Get current file SHA - use exact same pattern as tools
+                // Get current file SHA using the correct Accept header for metadata
                 let sha = null;
                 try {
                     const getResponse = await fetch(url, {
                         headers: {
-                            'Authorization': `token ${GITHUB_TOKEN}`
+                            'Authorization': `token ${GITHUB_TOKEN}`,
+                            'Accept': 'application/vnd.github.v3+json'
                         }
                     });
                     console.log('Activity GET response status:', getResponse.status);
                     if (getResponse.ok) {
                         const data = await getResponse.json();
-                        console.log('Activity response object keys:', Object.keys(data));
-                        console.log('Activity response data.sha:', data.sha);
-                        console.log('Full activity response:', JSON.stringify(data).substring(0, 300));
-                        sha = data.sha;
-                        if (sha) {
-                            console.log('✅ Got activity file SHA:', sha.substring(0, 8) + '...');
+                        console.log('Activity response keys:', Object.keys(data));
+                        
+                        // Check different possible SHA locations
+                        sha = data.sha || data.commit?.sha;
+                        
+                        if (!sha) {
+                            // If data has 'activity' key, it's the content not metadata
+                            // This means GitHub is returning the file content
+                            // Try to extract SHA from the response headers or use alternate method
+                            console.warn('Response appears to be file content, not metadata');
+                            console.log('Response content sample:', JSON.stringify(data).substring(0, 100));
                         } else {
-                            console.error('❌ No sha field in response! Keys:', Object.keys(data).join(', '));
+                            console.log('✅ Got activity file SHA:', sha.substring(0, 8) + '...');
                         }
+                    } else if (getResponse.status === 404) {
+                        console.log('⚠️ Activity file does not exist yet');
                     } else {
                         console.warn('Could not get existing activity file (status ' + getResponse.status + ')');
                     }
@@ -1357,8 +1370,9 @@
                     console.warn('Error getting activity SHA:', e.message);
                 }
 
+                // If we still don't have SHA, we can't proceed
                 if (!sha) {
-                    console.error('❌ Failed to get activity file SHA - cannot update');
+                    console.error('❌ Could not obtain SHA for activity-log.json');
                     return;
                 }
 
