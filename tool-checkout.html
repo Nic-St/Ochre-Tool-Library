@@ -800,7 +800,6 @@
             <img src="https://raw.githubusercontent.com/Nic-St/Ochre-Tool-Library/main/ochre-logo.png" alt="Ochre Trade Services" class="header-logo">
             <div class="header-content">
                 <h1>Tool Library</h1>
-                <p class="header-subtitle">Equipment & Power Tool Checkout</p>
             </div>
         </header>
 
@@ -848,7 +847,7 @@
                     <h2>Actions</h2>
                     <div class="quick-actions">
                         <button class="btn btn-primary btn-lg" onclick="openAddToolModal()">➕ Add New Tool</button>
-                        <button class="btn btn-primary btn-lg" onclick="openAddStaffModal()">➕ Add Staff Member</button>
+                        <button class="btn btn-primary btn-lg" onclick="openEditStaffModal()">✏️ Edit Staff Members</button>
                         <button class="btn btn-secondary" onclick="exportData()">📥 Export List</button>
                         <button class="btn btn-secondary" onclick="clearAllData()">🗑️ Clear All</button>
                     </div>
@@ -1005,17 +1004,30 @@
         </div>
     </div>
 
-    <!-- Add Staff Modal -->
-    <div id="addStaffModal" class="modal">
+    <!-- Edit Staff Members Modal -->
+    <div id="editStaffModal" class="modal">
         <div class="modal-content">
-            <h3>Add Staff Member</h3>
-            <div class="form-group">
-                <label>Staff Name</label>
-                <input type="text" id="staffNameInput" placeholder="e.g. David, Rachel, Tom" required>
+            <h3>Edit Staff Members</h3>
+            
+            <!-- Current Staff List -->
+            <div style="background: #fafafa; border: 2px solid var(--border); padding: 16px; margin-bottom: 18px; max-height: 250px; overflow-y: auto;">
+                <div style="font-weight: 700; margin-bottom: 12px; font-size: 0.9em; text-transform: uppercase; letter-spacing: 1px; color: var(--primary);">Current Staff</div>
+                <div id="staffListContainer"></div>
             </div>
+
+            <!-- Add New Staff Section -->
+            <div style="border-top: 2px solid var(--border); padding-top: 16px; margin-top: 16px;">
+                <label style="display: block; font-weight: 700; margin-bottom: 8px; font-size: 0.9em; text-transform: uppercase; letter-spacing: 0.5px;">Add New Staff Member</label>
+                <div style="display: flex; gap: 8px;">
+                    <input type="text" id="newStaffInput" placeholder="Enter name..." onkeypress="if(event.key==='Enter') addNewStaff()" style="flex: 1; padding: 10px; border: 2px solid var(--border); font-family: 'IBM Plex Mono', monospace; font-size: 0.9em;">
+                    <button class="btn btn-primary" onclick="addNewStaff()" style="padding: 10px 16px; font-size: 0.8em;">Add</button>
+                </div>
+            </div>
+
+            <!-- Buttons -->
             <div class="modal-buttons">
-                <button class="btn btn-primary" onclick="confirmAddStaff()">Add Staff</button>
-                <button class="btn btn-secondary" onclick="closeAddStaffModal()">Cancel</button>
+                <button class="btn btn-primary" onclick="closeEditStaffModal()" style="flex: 1;">Done</button>
+                <button class="btn btn-secondary" onclick="closeEditStaffModal()" style="flex: 1;">Cancel</button>
             </div>
         </div>
     </div>
@@ -1889,42 +1901,60 @@
             closeEditToolModal();
             showNotification('Tool updated successfully!', 'success');
         }
-        function openAddStaffModal() {
-            document.getElementById('addStaffModal').classList.add('active');
-            document.getElementById('staffNameInput').value = '';
-            document.getElementById('staffNameInput').focus();
+        // Edit Staff Modal
+        function openEditStaffModal() {
+            renderStaffList();
+            document.getElementById('editStaffModal').classList.add('active');
         }
 
-        function closeAddStaffModal() {
-            document.getElementById('addStaffModal').classList.remove('active');
+        function closeEditStaffModal() {
+            document.getElementById('editStaffModal').classList.remove('active');
+            document.getElementById('newStaffInput').value = '';
+            saveStaffToGitHub();
         }
 
-        async function confirmAddStaff() {
-            const name = document.getElementById('staffNameInput').value.trim();
+        function renderStaffList() {
+            const container = document.getElementById('staffListContainer');
+            if (staff.length === 0) {
+                container.innerHTML = '<div style="text-align: center; color: #999; padding: 20px;">No staff members yet</div>';
+                return;
+            }
+
+            container.innerHTML = staff.map(name => `
+                <div style="display: flex; justify-content: space-between; align-items: center; padding: 10px; background: white; border: 1px solid var(--border); margin-bottom: 8px; border-radius: 2px;">
+                    <div style="font-weight: 700; color: var(--primary);">${name}</div>
+                    <button class="btn btn-danger" onclick="removeStaffMember('${name}')" style="padding: 4px 8px; font-size: 0.75em;">Remove</button>
+                </div>
+            `).join('');
+        }
+
+        function addNewStaff() {
+            const input = document.getElementById('newStaffInput');
+            const name = input.value.trim();
+            
             if (!name) {
                 showNotification('Please enter a staff name', 'error');
                 return;
             }
 
-            // Check if staff member already exists
             if (staff.includes(name)) {
                 showNotification(`${name} is already in the staff list`, 'error');
                 return;
             }
 
-            // Add to local list
             staff.push(name);
+            input.value = '';
+            renderStaffList();
+            populateStaffDropdown();
+            showNotification(`${name} added to staff!`, 'success');
+        }
 
-            // Save to GitHub
-            const saved = await saveStaffToGitHub();
-            if (saved) {
-                populateStaffDropdown();
-                closeAddStaffModal();
-                showNotification(`${name} has been added to staff list!`, 'success');
-            } else {
-                // Remove from local list if save failed
+        function removeStaffMember(name) {
+            if (confirm(`Are you sure you want to remove ${name} from staff?`)) {
                 staff = staff.filter(s => s !== name);
-                showNotification('Failed to add staff member. Check GitHub token.', 'error');
+                renderStaffList();
+                populateStaffDropdown();
+                showNotification(`${name} removed from staff`, 'success');
             }
         }
         function openConditionModal(id) {
@@ -2021,7 +2051,7 @@
                 closeReturnModal();
                 closeEditImageModal();
                 closeConditionModal();
-                closeAddStaffModal();
+                closeEditStaffModal();
                 closeEditToolModal();
             }
         });
