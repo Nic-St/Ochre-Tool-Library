@@ -1327,57 +1327,32 @@
                 return;
             }
 
-            console.log('📤 Attempting to sync', activityLog.length, 'activities to GitHub...');
-
             try {
                 const url = `https://api.github.com/repos/${GITHUB_OWNER}/${GITHUB_REPO}/contents/activity-log.json`;
-                console.log('URL:', url);
                 
-                // Get current file SHA - DECLARE OUTSIDE THE INNER TRY
+                // Get current file SHA - use exact same pattern as tools
                 let sha = null;
                 try {
-                    console.log('Getting existing file SHA using git API...');
-                    // Use git blob API to get SHA without getting content
-                    const gitUrl = `https://api.github.com/repos/${GITHUB_OWNER}/${GITHUB_REPO}/git/trees/${GITHUB_BRANCH}`;
-                    const gitResponse = await fetch(gitUrl, {
+                    const getResponse = await fetch(url, {
                         headers: {
-                            'Authorization': `token ${GITHUB_TOKEN}`
+                            'Authorization': `token ${GITHUB_TOKEN}`,
+                            'Accept': 'application/vnd.github.v3+json'
                         }
                     });
-                    
-                    if (gitResponse.ok) {
-                        const treeData = await gitResponse.json();
-                        console.log('Git tree:', treeData);
-                        const activityFile = treeData.tree.find(item => item.path === 'activity-log.json');
-                        if (activityFile) {
-                            sha = activityFile.sha;
-                            console.log('✅ Got activity file SHA from git tree:', sha.substring(0, 8) + '...');
-                        } else {
-                            console.log('⚠️ activity-log.json not found in tree, will create');
-                        }
+                    if (getResponse.ok) {
+                        const data = await getResponse.json();
+                        sha = data.sha;
+                        console.log('✅ Got activity file SHA:', sha.substring(0, 8) + '...');
                     } else {
-                        // Fallback: try the regular API
-                        console.log('⚠️ Git tree API failed, trying regular content API...');
-                        const getResponse = await fetch(url, {
-                            headers: {
-                                'Authorization': `token ${GITHUB_TOKEN}`,
-                                'Accept': 'application/vnd.github.v3+json'
-                            }
-                        });
-                        
-                        if (getResponse.ok) {
-                            const data = await getResponse.json();
-                            if (data.sha) {
-                                sha = data.sha;
-                                console.log('✅ Got existing activity file SHA:', sha.substring(0, 8) + '...');
-                            } else {
-                                console.warn('⚠️ Response has no SHA field. Keys:', Object.keys(data));
-                            }
-                        }
+                        console.warn('Could not get existing activity file (status ' + getResponse.status + ')');
                     }
                 } catch (e) {
-                    console.warn('⚠️ Error getting activity SHA:', e.message);
-                    console.error('Full error:', e);
+                    console.warn('Error getting activity SHA:', e.message);
+                }
+
+                if (!sha) {
+                    console.error('❌ Failed to get activity file SHA - cannot update');
+                    return;
                 }
 
                 const activityData = {
@@ -1395,16 +1370,11 @@
                 const requestBody = {
                     message: 'Update activity log',
                     content: content,
-                    branch: GITHUB_BRANCH
+                    branch: GITHUB_BRANCH,
+                    sha: sha
                 };
                 
-                // Only add SHA if file exists
-                if (sha) {
-                    requestBody.sha = sha;
-                    console.log('📮 Sending PUT request with message, content, branch, sha');
-                } else {
-                    console.log('📮 Sending PUT request (creating new file) with message, content, branch');
-                }
+                console.log('📮 Sending activity PUT with SHA:', sha.substring(0, 8) + '...');
                 
                 const response = await fetch(url, {
                     method: 'PUT',
@@ -1415,8 +1385,6 @@
                     body: JSON.stringify(requestBody)
                 });
 
-                console.log('PUT response status:', response.status);
-                
                 if (response.ok) {
                     console.log('✅ Activity synced to GitHub successfully');
                 } else {
