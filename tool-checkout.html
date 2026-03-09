@@ -1344,8 +1344,13 @@
                     console.log('GET response status:', getResponse.status);
                     if (getResponse.ok) {
                         const data = await getResponse.json();
+                        console.log('Full response data:', data);
                         sha = data.sha;
-                        console.log('✅ Got existing activity file SHA:', sha.substring(0, 8) + '...');
+                        if (sha) {
+                            console.log('✅ Got existing activity file SHA:', sha.substring(0, 8) + '...');
+                        } else {
+                            console.error('❌ No SHA in response. Data:', JSON.stringify(data));
+                        }
                     } else if (getResponse.status === 404) {
                         console.log('⚠️ Activity file does not exist yet, will create new file');
                     } else {
@@ -1355,6 +1360,7 @@
                     }
                 } catch (e) {
                     console.warn('⚠️ Error getting activity SHA:', e.message);
+                    console.error('Full error:', e);
                 }
 
                 const activityData = {
