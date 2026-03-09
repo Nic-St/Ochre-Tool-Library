@@ -1114,12 +1114,14 @@
                 activityLog.pop();
             }
             // Save to localStorage as backup
-            localStorage.setItem('activityLog', JSON.stringify(activityLog.map(item => ({
+            const toSave = activityLog.map(item => ({
                 tool: item.tool,
                 person: item.person,
                 action: item.action,
                 timestamp: item.timestamp.toISOString()
-            }))));
+            }));
+            localStorage.setItem('activityLog', JSON.stringify(toSave));
+            console.log('✅ Saved activity to localStorage:', activityLog.length, 'items');
             renderActivityFeed();
             saveActivityToGitHub();
         }
@@ -1271,7 +1273,6 @@
                         ...item,
                         timestamp: new Date(item.timestamp)
                     }));
-                    renderActivityFeed();
                     console.log('Loaded activity from GitHub:', activityLog.length, 'items');
                 } else {
                     console.warn('Could not load activity from GitHub, trying localStorage');
@@ -1286,20 +1287,21 @@
         function loadActivityFromLocalStorage() {
             try {
                 const stored = localStorage.getItem('activityLog');
+                console.log('localStorage activityLog raw value:', stored ? stored.substring(0, 100) + '...' : 'null');
                 if (stored) {
                     const parsed = JSON.parse(stored);
                     activityLog = parsed.map(item => ({
                         ...item,
                         timestamp: new Date(item.timestamp)
                     }));
-                    console.log('Loaded activity from localStorage:', activityLog.length, 'items');
+                    console.log('✅ Loaded activity from localStorage:', activityLog.length, 'items');
                     return true;
                 } else {
-                    console.log('No activity found in localStorage');
+                    console.log('❌ No activity found in localStorage');
                     return false;
                 }
             } catch (error) {
-                console.error('Error loading activity from localStorage:', error);
+                console.error('❌ Error loading activity from localStorage:', error);
                 return false;
             }
         }
@@ -1313,38 +1315,46 @@
                     action: item.action,
                     timestamp: item.timestamp.toISOString()
                 }))));
+                console.log('✅ Activity saved to localStorage:', activityLog.length, 'items');
             } catch (e) {
                 console.warn('Could not save activity to localStorage:', e.message);
             }
 
             if (!GITHUB_TOKEN) {
-                console.log('No GitHub token set, activity saved to localStorage only');
+                console.log('⚠️ No GitHub token set, activity saved to localStorage only');
                 return;
             }
 
+            console.log('📤 Attempting to sync', activityLog.length, 'activities to GitHub...');
+
             try {
                 const url = `https://api.github.com/repos/${GITHUB_OWNER}/${GITHUB_REPO}/contents/activity-log.json`;
+                console.log('URL:', url);
                 
                 // Get current file SHA
                 let sha = null;
                 try {
+                    console.log('Getting existing file SHA...');
                     const getResponse = await fetch(url, {
                         headers: {
                             'Authorization': `token ${GITHUB_TOKEN}`,
                             'Accept': 'application/vnd.github.v3+json'
                         }
                     });
+                    console.log('GET response status:', getResponse.status);
                     if (getResponse.ok) {
                         const data = await getResponse.json();
                         sha = data.sha;
+                        console.log('✅ Got existing activity file SHA:', sha.substring(0, 8) + '...');
+                    } else if (getResponse.status === 404) {
+                        console.log('⚠️ Activity file does not exist yet, will create new file');
+                    } else {
+                        console.error('❌ Unexpected response:', getResponse.status);
+                        const errText = await getResponse.text();
+                        console.error('Response:', errText);
                     }
                 } catch (e) {
-                    console.warn('Error getting activity SHA:', e.message);
-                }
-
-                if (!sha) {
-                    console.error('Failed to get activity file SHA - cannot update GitHub');
-                    return;
+                    console.warn('⚠️ Error getting activity SHA:', e.message);
                 }
 
                 const activityData = {
@@ -1361,9 +1371,15 @@
                 const requestBody = {
                     message: 'Update activity log',
                     content: content,
-                    branch: GITHUB_BRANCH,
-                    sha: sha
+                    branch: GITHUB_BRANCH
                 };
+                
+                // Only add SHA if file exists
+                if (sha) {
+                    requestBody.sha = sha;
+                }
+                
+                console.log('📮 Sending PUT request with', Object.keys(requestBody).join(', '));
                 
                 const response = await fetch(url, {
                     method: 'PUT',
@@ -1374,13 +1390,17 @@
                     body: JSON.stringify(requestBody)
                 });
 
+                console.log('PUT response status:', response.status);
+                
                 if (response.ok) {
-                    console.log('Activity synced to GitHub successfully');
+                    console.log('✅ Activity synced to GitHub successfully');
                 } else {
-                    console.error('GitHub activity save error:', response.status);
+                    console.error('❌ GitHub activity save error:', response.status);
+                    const errorData = await response.json();
+                    console.error('Error details:', errorData);
                 }
             } catch (error) {
-                console.error('Error saving activity to GitHub:', error);
+                console.error('❌ Error saving activity to GitHub:', error);
             }
         }
 
