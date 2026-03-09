@@ -22,5 +22,17 @@
     "checkedOutDate": null,
     "expectedReturn": null,
     "notes": null
+  },
+  {
+    "id": 1773048414735,
+    "name": "Milwaukee 18v Mitre Saw",
+    "category": "Saws",
+    "location": "Shed",
+    "condition": "good",
+    "image": null,
+    "checkedOutBy": null,
+    "checkedOutDate": null,
+    "expectedReturn": null,
+    "notes": null
   }
 ]
