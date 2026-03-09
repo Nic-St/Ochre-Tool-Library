@@ -1335,14 +1335,21 @@
                 try {
                     const getResponse = await fetch(url, {
                         headers: {
-                            'Authorization': `token ${GITHUB_TOKEN}`,
-                            'Accept': 'application/vnd.github.v3+json'
+                            'Authorization': `token ${GITHUB_TOKEN}`
                         }
                     });
+                    console.log('Activity GET response status:', getResponse.status);
                     if (getResponse.ok) {
                         const data = await getResponse.json();
+                        console.log('Activity response object keys:', Object.keys(data));
+                        console.log('Activity response data.sha:', data.sha);
+                        console.log('Full activity response:', JSON.stringify(data).substring(0, 300));
                         sha = data.sha;
-                        console.log('✅ Got activity file SHA:', sha.substring(0, 8) + '...');
+                        if (sha) {
+                            console.log('✅ Got activity file SHA:', sha.substring(0, 8) + '...');
+                        } else {
+                            console.error('❌ No sha field in response! Keys:', Object.keys(data).join(', '));
+                        }
                     } else {
                         console.warn('Could not get existing activity file (status ' + getResponse.status + ')');
                     }
