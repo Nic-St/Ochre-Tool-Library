@@ -1331,7 +1331,7 @@
                 const url = `https://api.github.com/repos/${GITHUB_OWNER}/${GITHUB_REPO}/contents/activity-log.json`;
                 console.log('URL:', url);
                 
-                // Get current file SHA
+                // Get current file SHA - DECLARE OUTSIDE THE INNER TRY
                 let sha = null;
                 try {
                     console.log('Getting existing file SHA...');
@@ -1377,9 +1377,10 @@
                 // Only add SHA if file exists
                 if (sha) {
                     requestBody.sha = sha;
+                    console.log('📮 Sending PUT request with message, content, branch, sha');
+                } else {
+                    console.log('📮 Sending PUT request (creating new file) with message, content, branch');
                 }
-                
-                console.log('📮 Sending PUT request with', Object.keys(requestBody).join(', '));
                 
                 const response = await fetch(url, {
                     method: 'PUT',
