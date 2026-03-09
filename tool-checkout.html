@@ -1136,7 +1136,10 @@
 
         function renderActivityFeed() {
             const activityFeed = document.getElementById('activityFeed');
-            if (!activityFeed) return;
+            if (!activityFeed) {
+                console.warn('Activity feed element not found in DOM');
+                return;
+            }
             
             if (activityLog.length === 0) {
                 activityFeed.innerHTML = '<div class="empty-state" style="padding: 20px; text-align: center; color: #999; font-size: 0.9em;">No activity yet</div>';
@@ -1150,6 +1153,7 @@
                     <div class="activity-time">${getRelativeTime(item.timestamp)}</div>
                 </div>
             `).join('');
+            console.log('Activity feed rendered with', activityLog.length, 'items');
         }
 
         // Category Filter
@@ -1283,15 +1287,20 @@
             try {
                 const stored = localStorage.getItem('activityLog');
                 if (stored) {
-                    activityLog = JSON.parse(stored).map(item => ({
+                    const parsed = JSON.parse(stored);
+                    activityLog = parsed.map(item => ({
                         ...item,
                         timestamp: new Date(item.timestamp)
                     }));
-                    renderActivityFeed();
                     console.log('Loaded activity from localStorage:', activityLog.length, 'items');
+                    return true;
+                } else {
+                    console.log('No activity found in localStorage');
+                    return false;
                 }
             } catch (error) {
                 console.error('Error loading activity from localStorage:', error);
+                return false;
             }
         }
 
@@ -2101,6 +2110,7 @@
             await initializeGitHub();
             await loadStaff();
             await loadActivityFromGitHub();
+            renderActivityFeed();  // Ensure activity is rendered
             renderTools();
             
             // Track last update time for display
@@ -2125,6 +2135,8 @@
                 // Only refresh if user hasn't been active for 5 seconds
                 if (Date.now() - lastActivityTime > 5000) {
                     await loadToolsFromGitHub();
+                    await loadActivityFromGitHub();  // Also refresh activity
+                    renderActivityFeed();  // Re-render activity
                     lastUpdateTime = Date.now();
                 }
             }, 10000);
