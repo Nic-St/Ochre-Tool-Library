@@ -1333,18 +1333,28 @@
                 let sha = null;
                 let fileExists = false;
                 
-                const getResponse = await fetch(url, {
-                    headers: {
-                        'Authorization': `token ${GITHUB_TOKEN}`,
-                        'Accept': 'application/vnd.github.v3+json'
+                try {
+                    const getResponse = await fetch(url, {
+                        headers: {
+                            'Authorization': `token ${GITHUB_TOKEN}`,
+                            'Accept': 'application/vnd.github.v3+json'
+                        }
+                    });
+                    
+                    if (getResponse.ok) {
+                        const data = await getResponse.json();
+                        sha = data.sha;
+                        fileExists = true;
+                        console.log('Got SHA:', sha.substring(0, 8));
+                    } else if (getResponse.status === 404) {
+                        fileExists = false;
+                        console.log('File does not exist yet');
+                    } else {
+                        console.warn('GET failed with status:', getResponse.status);
                     }
-                });
-                
-                if (getResponse.ok) {
-                    const data = await getResponse.json();
-                    sha = data.sha;
-                    fileExists = true;
-                } else if (getResponse.status === 404) {
+                } catch (e) {
+                    console.warn('Error fetching file info:', e.message);
+                    // If we can't get info, assume file doesn't exist
                     fileExists = false;
                 }
 
@@ -1366,8 +1376,10 @@
                 // Add appropriate parameters based on whether file exists
                 if (fileExists && sha) {
                     requestBody.sha = sha;
+                    console.log('Updating existing file with SHA');
                 } else if (!fileExists) {
                     requestBody.branch = GITHUB_BRANCH;
+                    console.log('Creating new file on branch:', GITHUB_BRANCH);
                 }
                 
                 const response = await fetch(url, {
@@ -1383,9 +1395,16 @@
                     console.log('✅ Activity synced to GitHub');
                 } else {
                     console.error('Activity sync failed:', response.status);
+                    try {
+                        const errData = await response.json();
+                        console.error('Error details:', errData.message);
+                    } catch (e) {
+                        const errText = await response.text();
+                        console.error('Error response:', errText);
+                    }
                 }
             } catch (error) {
-                console.error('Error syncing activity:', error);
+                console.error('Error syncing activity:', error.message);
             }
         }
 
