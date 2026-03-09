@@ -1335,43 +1335,31 @@
             try {
                 const url = `https://api.github.com/repos/${GITHUB_OWNER}/${GITHUB_REPO}/contents/activity-log.json`;
                 
-                // Get current file SHA - request metadata, not raw content
+                // Get current file SHA - but allow for file not existing
                 let sha = null;
+                let fileExists = false;
                 try {
                     const getResponse = await fetch(url, {
                         headers: {
                             'Authorization': `token ${GITHUB_TOKEN}`
-                            // Don't specify Accept header - let GitHub return default (metadata)
                         }
                     });
                     console.log('Activity GET response status:', getResponse.status);
                     if (getResponse.ok) {
                         const data = await getResponse.json();
-                        console.log('Activity response keys:', Object.keys(data));
-                        
-                        // Metadata response has these keys: name, path, sha, size, type, etc
                         sha = data.sha;
-                        
+                        fileExists = true;
                         if (sha) {
-                            console.log('✅ Got activity file SHA:', sha.substring(0, 8) + '...');
-                        } else {
-                            console.error('❌ No SHA in response. Response structure:', Object.keys(data).join(', '));
-                            // Log first 500 chars to understand structure
-                            console.log('Response preview:', JSON.stringify(data).substring(0, 500));
+                            console.log('✅ File exists, got SHA:', sha.substring(0, 8) + '...');
                         }
                     } else if (getResponse.status === 404) {
-                        console.log('⚠️ Activity file does not exist yet');
+                        console.log('⚠️ Activity file does not exist in GitHub yet - will create it');
+                        fileExists = false;
                     } else {
-                        console.warn('Could not get existing activity file (status ' + getResponse.status + ')');
+                        console.warn('Could not check activity file (status ' + getResponse.status + ')');
                     }
                 } catch (e) {
-                    console.warn('Error getting activity SHA:', e.message);
-                }
-
-                // If we still don't have SHA, we can't proceed
-                if (!sha) {
-                    console.error('❌ Could not obtain SHA for activity-log.json');
-                    return;
+                    console.warn('Error checking activity file:', e.message);
                 }
 
                 const activityData = {
@@ -1389,11 +1377,16 @@
                 const requestBody = {
                     message: 'Update activity log',
                     content: content,
-                    branch: GITHUB_BRANCH,
-                    sha: sha
+                    branch: GITHUB_BRANCH
                 };
                 
-                console.log('📮 Sending activity PUT with SHA:', sha.substring(0, 8) + '...');
+                // Only add SHA if file exists
+                if (sha) {
+                    requestBody.sha = sha;
+                    console.log('📮 Sending activity PUT (update) with SHA:', sha.substring(0, 8) + '...');
+                } else {
+                    console.log('📮 Sending activity PUT (create new file)');
+                }
                 
                 const response = await fetch(url, {
                     method: 'PUT',
