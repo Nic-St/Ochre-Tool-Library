@@ -6,11 +6,14 @@
     "location": "Shed",
     "condition": "good",
     "image": null,
-    "checkedOutBy": "Nic",
-    "checkedOutDate": "09/03/2026",
-    "expectedReturn": "Not Sure",
+    "checkedOutBy": null,
+    "checkedOutDate": null,
+    "expectedReturn": null,
     "notes": null,
-    "checkedOutTime": "10:12 pm"
+    "checkedOutTime": null,
+    "returnedBy": "Nic",
+    "returnedDate": "09/03/2026",
+    "returnedTime": "10:12 pm"
   },
   {
     "id": 1773026021187,
