@@ -1313,7 +1313,7 @@
         }
 
         async function saveActivityToGitHub() {
-            // Always save to localStorage first for redundancy
+            // Always save to localStorage
             try {
                 localStorage.setItem('activityLog', JSON.stringify(activityLog.map((item, index) => ({
                     id: String(index + 1),
@@ -1322,57 +1322,57 @@
                     action: item.action,
                     timestamp: item.timestamp.toISOString()
                 }))));
-                console.log('✅ Activity saved to localStorage:', activityLog.length, 'items');
+                console.log('✅ Activity saved to localStorage');
             } catch (e) {
                 console.warn('Could not save activity to localStorage:', e.message);
             }
 
             if (!GITHUB_TOKEN) {
-                console.log('⚠️ No GitHub token set, activity saved to localStorage only');
                 return;
             }
 
             try {
                 const url = `https://api.github.com/repos/${GITHUB_OWNER}/${GITHUB_REPO}/contents/activity-log.json`;
                 
-                // Get current file SHA - but allow for file not existing
+                // Try to get existing SHA
                 let sha = null;
-                let fileExists = false;
                 try {
-                    const getResponse = await fetch(url, {
+                    const headResponse = await fetch(url, {
+                        method: 'HEAD',
                         headers: {
                             'Authorization': `token ${GITHUB_TOKEN}`
                         }
                     });
-                    console.log('Activity GET response status:', getResponse.status);
-                    if (getResponse.ok) {
-                        const data = await getResponse.json();
-                        sha = data.sha;
-                        fileExists = true;
-                        if (sha) {
-                            console.log('✅ File exists, got SHA:', sha.substring(0, 8) + '...');
+                    
+                    if (headResponse.ok) {
+                        // File exists, now get the actual metadata
+                        const getResponse = await fetch(url, {
+                            headers: {
+                                'Authorization': `token ${GITHUB_TOKEN}`,
+                                'Accept': 'application/vnd.github.v3+json'
+                            }
+                        });
+                        
+                        if (getResponse.ok) {
+                            const data = await getResponse.json();
+                            if (data.sha) {
+                                sha = data.sha;
+                            }
                         }
-                    } else if (getResponse.status === 404) {
-                        console.log('⚠️ Activity file does not exist in GitHub yet - will create it');
-                        fileExists = false;
-                    } else {
-                        console.warn('Could not check activity file (status ' + getResponse.status + ')');
                     }
                 } catch (e) {
-                    console.warn('Error checking activity file:', e.message);
+                    console.warn('Could not get SHA:', e.message);
                 }
 
-                const activityData = {
-                    activity: activityLog.map((item, index) => ({
-                        id: String(index + 1),
-                        tool: item.tool,
-                        person: item.person,
-                        action: item.action,
-                        timestamp: item.timestamp.toISOString()
-                    }))
-                };
+                const activityArray = activityLog.map((item, index) => ({
+                    id: String(index + 1),
+                    tool: item.tool,
+                    person: item.person,
+                    action: item.action,
+                    timestamp: item.timestamp.toISOString()
+                }));
 
-                const content = btoa(unescape(encodeURIComponent(JSON.stringify(activityData, null, 2))));
+                const content = btoa(unescape(encodeURIComponent(JSON.stringify(activityArray, null, 2))));
                 
                 const requestBody = {
                     message: 'Update activity log',
@@ -1380,12 +1380,8 @@
                     branch: GITHUB_BRANCH
                 };
                 
-                // Only add SHA if file exists
                 if (sha) {
                     requestBody.sha = sha;
-                    console.log('📮 Sending activity PUT (update) with SHA:', sha.substring(0, 8) + '...');
-                } else {
-                    console.log('📮 Sending activity PUT (create new file)');
                 }
                 
                 const response = await fetch(url, {
@@ -1398,14 +1394,12 @@
                 });
 
                 if (response.ok) {
-                    console.log('✅ Activity synced to GitHub successfully');
+                    console.log('✅ Activity synced to GitHub');
                 } else {
-                    console.error('❌ GitHub activity save error:', response.status);
-                    const errorData = await response.json();
-                    console.error('Error details:', errorData);
+                    console.error('Activity sync failed:', response.status);
                 }
             } catch (error) {
-                console.error('❌ Error saving activity to GitHub:', error);
+                console.error('Error syncing activity:', error);
             }
         }
 
