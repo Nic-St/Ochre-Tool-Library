@@ -1329,27 +1329,23 @@
             try {
                 const url = `https://api.github.com/repos/${GITHUB_OWNER}/${GITHUB_REPO}/contents/activity-log.json`;
                 
-                // Try to get existing SHA
+                // Always get fresh SHA right before PUT
                 let sha = null;
-                try {
-                    const getResponse = await fetch(url, {
-                        headers: {
-                            'Authorization': `token ${GITHUB_TOKEN}`,
-                            'Accept': 'application/vnd.github.v3+json'
-                        }
-                    });
-                    
-                    if (getResponse.ok) {
-                        const data = await getResponse.json();
-                        if (data.sha) {
-                            sha = data.sha;
-                            console.log('✅ Got SHA for existing file');
-                        }
-                    } else if (getResponse.status === 404) {
-                        console.log('📝 File does not exist, will create new');
+                let fileExists = false;
+                
+                const getResponse = await fetch(url, {
+                    headers: {
+                        'Authorization': `token ${GITHUB_TOKEN}`,
+                        'Accept': 'application/vnd.github.v3+json'
                     }
-                } catch (e) {
-                    // Ignore errors getting SHA
+                });
+                
+                if (getResponse.ok) {
+                    const data = await getResponse.json();
+                    sha = data.sha;
+                    fileExists = true;
+                } else if (getResponse.status === 404) {
+                    fileExists = false;
                 }
 
                 const activityArray = activityLog.map((item, index) => ({
@@ -1367,11 +1363,10 @@
                     content: content
                 };
                 
-                // Only add SHA if updating existing file
-                if (sha) {
+                // Add appropriate parameters based on whether file exists
+                if (fileExists && sha) {
                     requestBody.sha = sha;
-                } else {
-                    // For new files, add the branch
+                } else if (!fileExists) {
                     requestBody.branch = GITHUB_BRANCH;
                 }
                 
@@ -1388,8 +1383,6 @@
                     console.log('✅ Activity synced to GitHub');
                 } else {
                     console.error('Activity sync failed:', response.status);
-                    const errData = await response.json();
-                    console.error('Error:', errData.message);
                 }
             } catch (error) {
                 console.error('Error syncing activity:', error);
