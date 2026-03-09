@@ -1329,33 +1329,58 @@
             try {
                 const url = `https://api.github.com/repos/${GITHUB_OWNER}/${GITHUB_REPO}/contents/activity-log.json`;
                 
-                // Always get fresh SHA right before PUT
+                // Get SHA using git API which is more reliable
                 let sha = null;
                 let fileExists = false;
                 
                 try {
-                    const getResponse = await fetch(url, {
+                    // First get the commit SHA of the branch
+                    const refUrl = `https://api.github.com/repos/${GITHUB_OWNER}/${GITHUB_REPO}/git/refs/heads/${GITHUB_BRANCH}`;
+                    const refResponse = await fetch(refUrl, {
                         headers: {
-                            'Authorization': `token ${GITHUB_TOKEN}`,
-                            'Accept': 'application/vnd.github.v3+json'
+                            'Authorization': `token ${GITHUB_TOKEN}`
                         }
                     });
                     
-                    if (getResponse.ok) {
-                        const data = await getResponse.json();
-                        sha = data.sha;
-                        fileExists = true;
-                        console.log('Got SHA:', sha.substring(0, 8));
-                    } else if (getResponse.status === 404) {
-                        fileExists = false;
-                        console.log('File does not exist yet');
-                    } else {
-                        console.warn('GET failed with status:', getResponse.status);
+                    if (refResponse.ok) {
+                        const refData = await refResponse.json();
+                        const commitSha = refData.object.sha;
+                        console.log('Got branch commit SHA');
+                        
+                        // Now get the tree to find activity-log.json
+                        const treeUrl = `https://api.github.com/repos/${GITHUB_OWNER}/${GITHUB_REPO}/git/trees/${commitSha}`;
+                        const treeResponse = await fetch(treeUrl, {
+                            headers: {
+                                'Authorization': `token ${GITHUB_TOKEN}`
+                            }
+                        });
+                        
+                        if (treeResponse.ok) {
+                            const treeData = await treeResponse.json();
+                            const activityFile = treeData.tree.find(f => f.path === 'activity-log.json');
+                            if (activityFile) {
+                                sha = activityFile.sha;
+                                fileExists = true;
+                                console.log('Found activity-log.json SHA in tree');
+                            } else {
+                                console.log('activity-log.json not in tree yet');
+                                fileExists = false;
+                            }
+                        }
                     }
                 } catch (e) {
-                    console.warn('Error fetching file info:', e.message);
-                    // If we can't get info, assume file doesn't exist
-                    fileExists = false;
+                    console.warn('Error getting SHA via git API:', e.message);
+                    // Try fallback: just try to fetch and see if we get 404
+                    try {
+                        const fallbackResponse = await fetch(url, {
+                            headers: {
+                                'Authorization': `token ${GITHUB_TOKEN}`
+                            }
+                        });
+                        fileExists = fallbackResponse.ok;
+                    } catch (e2) {
+                        fileExists = false;
+                    }
                 }
 
                 const activityArray = activityLog.map((item, index) => ({
@@ -1373,13 +1398,13 @@
                     content: content
                 };
                 
-                // Add appropriate parameters based on whether file exists
+                // Add appropriate parameters
                 if (fileExists && sha) {
                     requestBody.sha = sha;
-                    console.log('Updating existing file with SHA');
-                } else if (!fileExists) {
+                    console.log('Updating file with SHA:', sha.substring(0, 8));
+                } else {
                     requestBody.branch = GITHUB_BRANCH;
-                    console.log('Creating new file on branch:', GITHUB_BRANCH);
+                    console.log('Creating new file');
                 }
                 
                 const response = await fetch(url, {
@@ -1395,13 +1420,8 @@
                     console.log('✅ Activity synced to GitHub');
                 } else {
                     console.error('Activity sync failed:', response.status);
-                    try {
-                        const errData = await response.json();
-                        console.error('Error details:', errData.message);
-                    } catch (e) {
-                        const errText = await response.text();
-                        console.error('Error response:', errText);
-                    }
+                    const errData = await response.json();
+                    console.error('Error:', errData.message);
                 }
             } catch (error) {
                 console.error('Error syncing activity:', error.message);
