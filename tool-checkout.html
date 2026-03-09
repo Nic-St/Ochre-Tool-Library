@@ -613,6 +613,55 @@
             color: white;
             border-color: var(--accent);
         }
+
+        /* Activity Feed */
+        .activity-item {
+            padding: 8px;
+            background: #fafafa;
+            border: 1px solid var(--border);
+            margin-bottom: 8px;
+            border-radius: 0;
+            font-size: 0.8em;
+        }
+
+        .activity-tool {
+            font-weight: 700;
+            color: var(--primary);
+            margin-bottom: 2px;
+            word-wrap: break-word;
+            font-size: 0.85em;
+        }
+
+        .activity-action {
+            color: #666;
+            font-size: 0.75em;
+            margin-bottom: 4px;
+        }
+
+        .activity-time {
+            font-size: 0.7em;
+            color: #999;
+        }
+
+        .activity-item .badge {
+            display: inline-block;
+            padding: 1px 4px;
+            font-size: 0.65em;
+            font-weight: 700;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            margin-left: 4px;
+        }
+
+        .activity-item .badge.checkout {
+            background: #fff3cd;
+            color: #856404;
+        }
+
+        .activity-item .badge.return {
+            background: #d4edda;
+            color: #155724;
+        }
         .search-container {
             position: relative;
             margin-bottom: 20px;
@@ -786,6 +835,25 @@
 
             <!-- Right Sidebar -->
             <div class="sidebar">
+                <!-- Recent Activity -->
+                <div class="panel">
+                    <h2>Recent Activity</h2>
+                    <div id="activityFeed" style="max-height: 400px; overflow-y: auto;">
+                        <div class="empty-state" style="padding: 20px; text-align: center; color: #999; font-size: 0.9em;">No activity yet</div>
+                    </div>
+                </div>
+
+                <!-- Quick Actions -->
+                <div class="panel">
+                    <h2>Actions</h2>
+                    <div class="quick-actions">
+                        <button class="btn btn-primary btn-lg" onclick="openAddToolModal()">➕ Add New Tool</button>
+                        <button class="btn btn-primary btn-lg" onclick="openAddStaffModal()">➕ Add Staff Member</button>
+                        <button class="btn btn-secondary" onclick="exportData()">📥 Export List</button>
+                        <button class="btn btn-secondary" onclick="clearAllData()">🗑️ Clear All</button>
+                    </div>
+                </div>
+
                 <!-- Stats -->
                 <div class="stats-box">
                     <div class="stats-label">Total Tools</div>
@@ -800,17 +868,6 @@
                 <div class="stats-box">
                     <div class="stats-label">Checked Out</div>
                     <div class="stats-number" id="checkedOutTools" style="color: var(--warning);">0</div>
-                </div>
-
-                <!-- Quick Actions -->
-                <div class="panel">
-                    <h2>Actions</h2>
-                    <div class="quick-actions">
-                        <button class="btn btn-primary btn-lg" onclick="openAddToolModal()">➕ Add New Tool</button>
-                        <button class="btn btn-primary btn-lg" onclick="openAddStaffModal()">➕ Add Staff Member</button>
-                        <button class="btn btn-secondary" onclick="exportData()">📥 Export List</button>
-                        <button class="btn btn-secondary" onclick="clearAllData()">🗑️ Clear All</button>
-                    </div>
                 </div>
             </div>
         </div>
@@ -1029,6 +1086,51 @@
         let currentSort = localStorage.getItem('toolSort') || 'name-asc';
         let sortDirection = 'asc'; // asc or desc
         let selectedCategory = '';
+        let activityLog = [];
+
+        // Activity Logging
+        function addActivity(toolName, person, action) {
+            const timestamp = new Date();
+            activityLog.unshift({
+                tool: toolName,
+                person: person,
+                action: action,
+                timestamp: timestamp
+            });
+            // Keep only last 50 activities
+            if (activityLog.length > 50) {
+                activityLog.pop();
+            }
+            renderActivityFeed();
+        }
+
+        function getRelativeTime(date) {
+            const now = new Date();
+            const diff = Math.floor((now - date) / 1000);
+            
+            if (diff < 60) return 'now';
+            if (diff < 3600) return Math.floor(diff / 60) + 'm ago';
+            if (diff < 86400) return Math.floor(diff / 3600) + 'h ago';
+            return Math.floor(diff / 86400) + 'd ago';
+        }
+
+        function renderActivityFeed() {
+            const activityFeed = document.getElementById('activityFeed');
+            if (!activityFeed) return;
+            
+            if (activityLog.length === 0) {
+                activityFeed.innerHTML = '<div class="empty-state" style="padding: 20px; text-align: center; color: #999; font-size: 0.9em;">No activity yet</div>';
+                return;
+            }
+
+            activityFeed.innerHTML = activityLog.map(item => `
+                <div class="activity-item">
+                    <div class="activity-tool">${item.tool}</div>
+                    <div class="activity-action">${item.person} ${item.action} <span class="badge ${item.action === 'checked out' ? 'checkout' : 'return'}">${item.action.toUpperCase()}</span></div>
+                    <div class="activity-time">${getRelativeTime(item.timestamp)}</div>
+                </div>
+            `).join('');
+        }
 
         // Category Filter
         function changeCategoryFilter() {
@@ -1537,6 +1639,10 @@
             tool.checkedOutDate = new Date().toLocaleDateString('en-AU');
             tool.expectedReturn = duration;
             tool.notes = document.getElementById('checkoutNotes').value || null;
+            
+            // Log activity
+            addActivity(tool.name, name, 'checked out');
+            
             saveTool();
             renderTools();
             closeCheckoutModal();
@@ -1555,10 +1661,16 @@
 
         function confirmReturn() {
             const tool = tools.find(t => t.id === currentToolId);
+            const returnedBy = tool.checkedOutBy;
+            
             tool.checkedOutBy = null;
             tool.checkedOutDate = null;
             tool.expectedReturn = null;
             tool.notes = null;
+            
+            // Log activity
+            addActivity(tool.name, returnedBy, 'returned');
+            
             saveTool();
             renderTools();
             closeReturnModal();
