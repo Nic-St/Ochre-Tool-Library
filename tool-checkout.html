@@ -1337,8 +1337,7 @@
                     console.log('Getting existing file SHA...');
                     const getResponse = await fetch(url, {
                         headers: {
-                            'Authorization': `token ${GITHUB_TOKEN}`,
-                            'Accept': 'application/vnd.github.v3+json'
+                            'Authorization': `token ${GITHUB_TOKEN}`
                         }
                     });
                     console.log('GET response status:', getResponse.status);
