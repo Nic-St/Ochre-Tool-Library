@@ -913,11 +913,11 @@
                 </div>
                 <div class="form-group">
                     <label>Category</label>
-                    <div style="display: flex; gap: 6px;">
-                        <select id="toolCategory" required style="flex: 1;">
+                    <div style="display: flex; gap: 6px; align-items: stretch;">
+                        <select id="toolCategory" required style="flex: 1; padding: 8px 12px !important; border: 2px solid var(--border) !important; background: white; font-family: 'IBM Plex Mono', monospace; font-weight: 700; font-size: 0.9em; width: auto !important;">
                             <option value="">Select Category</option>
                         </select>
-                        <button type="button" onclick="openAddCategoryModal()" title="Add new category" style="padding: 8px 10px; border: 2px solid var(--accent); background: var(--accent); color: white; cursor: pointer; font-family: 'IBM Plex Mono', monospace; font-weight: 700; font-size: 1em; line-height: 1; display: flex; align-items: center; justify-content: center; width: 40px; height: 40px; transition: all 0.3s; border-radius: 2px;" onmouseover="this.style.background='#e55a2b'; this.style.transform='scale(1.05)';" onmouseout="this.style.background='var(--accent)'; this.style.transform='scale(1)';">+</button>
+                        <button type="button" onclick="openAddCategoryModal()" title="Add new category" style="padding: 0; border: 2px solid var(--accent); background: var(--accent); color: white; cursor: pointer; font-family: 'IBM Plex Mono', monospace; font-weight: 700; font-size: 1em; line-height: 1; display: flex; align-items: center; justify-content: center; width: 40px; flex-shrink: 0; transition: all 0.3s; border-radius: 2px;" onmouseover="this.style.background='#e55a2b'; this.style.transform='scale(1.05)';" onmouseout="this.style.background='var(--accent)'; this.style.transform='scale(1)';">+</button>
                     </div>
                 </div>
                 <div class="form-group">
@@ -1076,7 +1076,12 @@
             </div>
             <div class="form-group">
                 <label>Category</label>
-                <input type="text" id="editToolCategory" required>
+                <div style="display: flex; gap: 6px; align-items: stretch;">
+                    <select id="editToolCategory" required style="flex: 1; padding: 8px 12px !important; border: 2px solid var(--border) !important; background: white; font-family: 'IBM Plex Mono', monospace; font-weight: 700; font-size: 0.9em; width: auto !important;">
+                        <option value="">Select Category</option>
+                    </select>
+                    <button type="button" onclick="openAddCategoryModalFromEdit()" title="Add new category" style="padding: 0; border: 2px solid var(--accent); background: var(--accent); color: white; cursor: pointer; font-family: 'IBM Plex Mono', monospace; font-weight: 700; font-size: 1em; line-height: 1; display: flex; align-items: center; justify-content: center; width: 40px; flex-shrink: 0; transition: all 0.3s; border-radius: 2px;" onmouseover="this.style.background='#e55a2b'; this.style.transform='scale(1.05)';" onmouseout="this.style.background='var(--accent)'; this.style.transform='scale(1)';">+</button>
+                </div>
             </div>
             <div class="form-group">
                 <label>Location (when not checked out)</label>
@@ -1215,7 +1220,17 @@
         }
 
         function openAddCategoryModal() {
+            // For Add Tool modal
             document.getElementById('quickAddCategoryModal').classList.add('active');
+            document.getElementById('quickAddCategoryModal').dataset.source = 'add';
+            document.getElementById('quickCategoryName').value = '';
+            setTimeout(() => document.getElementById('quickCategoryName').focus(), 100);
+        }
+
+        function openAddCategoryModalFromEdit() {
+            // For Edit Tool modal
+            document.getElementById('quickAddCategoryModal').classList.add('active');
+            document.getElementById('quickAddCategoryModal').dataset.source = 'edit';
             document.getElementById('quickCategoryName').value = '';
             setTimeout(() => document.getElementById('quickCategoryName').focus(), 100);
         }
@@ -1227,6 +1242,7 @@
         function confirmAddCategory() {
             const input = document.getElementById('quickCategoryName');
             const categoryName = input.value.trim();
+            const source = document.getElementById('quickAddCategoryModal').dataset.source || 'add';
             
             if (!categoryName) {
                 alert('Please enter a category name');
@@ -1240,8 +1256,9 @@
                 return;
             }
             
-            // Add the category to the select in the modal
-            const categorySelect = document.getElementById('toolCategory');
+            // Add the category to the appropriate select
+            const selectId = source === 'edit' ? 'editToolCategory' : 'toolCategory';
+            const categorySelect = document.getElementById(selectId);
             const option = document.createElement('option');
             option.value = categoryName;
             option.textContent = categoryName;
@@ -1836,6 +1853,19 @@
         function openEditToolModal(id) {
             currentToolId = id;
             const tool = tools.find(t => t.id === id);
+            
+            // Populate category dropdown with existing categories
+            const categorySelect = document.getElementById('editToolCategory');
+            const existingCategories = [...new Set(tools.map(t => t.category))].sort();
+            
+            // Clear and rebuild options
+            categorySelect.innerHTML = '<option value="">Select Category</option>';
+            existingCategories.forEach(category => {
+                const option = document.createElement('option');
+                option.value = category;
+                option.textContent = category;
+                categorySelect.appendChild(option);
+            });
             
             document.getElementById('editToolName').value = tool.name;
             document.getElementById('editToolCategory').value = tool.category;
