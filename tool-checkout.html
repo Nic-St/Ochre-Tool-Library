@@ -1335,13 +1335,13 @@
             try {
                 const url = `https://api.github.com/repos/${GITHUB_OWNER}/${GITHUB_REPO}/contents/activity-log.json`;
                 
-                // Get current file SHA using the correct Accept header for metadata
+                // Get current file SHA - request metadata, not raw content
                 let sha = null;
                 try {
                     const getResponse = await fetch(url, {
                         headers: {
-                            'Authorization': `token ${GITHUB_TOKEN}`,
-                            'Accept': 'application/vnd.github.v3+json'
+                            'Authorization': `token ${GITHUB_TOKEN}`
+                            // Don't specify Accept header - let GitHub return default (metadata)
                         }
                     });
                     console.log('Activity GET response status:', getResponse.status);
@@ -1349,17 +1349,15 @@
                         const data = await getResponse.json();
                         console.log('Activity response keys:', Object.keys(data));
                         
-                        // Check different possible SHA locations
-                        sha = data.sha || data.commit?.sha;
+                        // Metadata response has these keys: name, path, sha, size, type, etc
+                        sha = data.sha;
                         
-                        if (!sha) {
-                            // If data has 'activity' key, it's the content not metadata
-                            // This means GitHub is returning the file content
-                            // Try to extract SHA from the response headers or use alternate method
-                            console.warn('Response appears to be file content, not metadata');
-                            console.log('Response content sample:', JSON.stringify(data).substring(0, 100));
-                        } else {
+                        if (sha) {
                             console.log('✅ Got activity file SHA:', sha.substring(0, 8) + '...');
+                        } else {
+                            console.error('❌ No SHA in response. Response structure:', Object.keys(data).join(', '));
+                            // Log first 500 chars to understand structure
+                            console.log('Response preview:', JSON.stringify(data).substring(0, 500));
                         }
                     } else if (getResponse.status === 404) {
                         console.log('⚠️ Activity file does not exist yet');
