@@ -78,5 +78,17 @@
     "checkedOutDate": null,
     "expectedReturn": null,
     "notes": null
+  },
+  {
+    "id": 1773055709425,
+    "name": "Wheelbarrow",
+    "category": "Gardening",
+    "location": "Shed",
+    "condition": "good",
+    "image": null,
+    "checkedOutBy": null,
+    "checkedOutDate": null,
+    "expectedReturn": null,
+    "notes": null
   }
 ]
