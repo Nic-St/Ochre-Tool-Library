@@ -857,10 +857,6 @@
                             <select id="categoryFilter" onchange="changeCategoryFilter()" style="padding: 8px 12px; border: 2px solid var(--border); background: white; font-family: 'IBM Plex Mono', monospace; font-weight: 700; font-size: 0.8em; text-transform: uppercase; letter-spacing: 1px; cursor: pointer;">
                                 <option value="">-- All Categories --</option>
                             </select>
-                            <div style="display: flex; gap: 8px;">
-                                <button class="sort-btn" id="sortNameBtn" onclick="toggleSort('name')">Name <span id="nameArrow">↓</span></button>
-                                <button class="sort-btn" id="sortDurationBtn" onclick="toggleSort('duration')">Duration <span id="durationArrow"></span></button>
-                            </div>
                         </div>
                     </div>
                     <div class="search-container">
@@ -1139,7 +1135,6 @@
         let currentStaff = localStorage.getItem('selectedStaff') || '';
         const checkoutDurations = ['Full Day', '2-3 Days', '1 Week', 'Not Sure'];
         let isInitialized = false;
-        let currentSort = localStorage.getItem('toolSort') || 'name-asc';
         let sortDirection = 'asc'; // asc or desc
         let selectedCategory = '';
 
@@ -1314,64 +1309,13 @@
         }
 
         // Sort Functions
-        function toggleSort(type) {
-            if (currentSort === type + '-asc') {
-                currentSort = type + '-desc';
-            } else {
-                currentSort = type + '-asc';
-            }
-            localStorage.setItem('toolSort', currentSort);
-            updateSortButtons();
-            renderTools();
-        }
-
-        function updateSortButtons() {
-            const nameBtn = document.getElementById('sortNameBtn');
-            const durationBtn = document.getElementById('sortDurationBtn');
-            const nameArrow = document.getElementById('nameArrow');
-            const durationArrow = document.getElementById('durationArrow');
-
-            // Reset all buttons
-            nameBtn.classList.remove('active');
-            durationBtn.classList.remove('active');
-
-            if (currentSort.startsWith('name')) {
-                nameBtn.classList.add('active');
-                nameArrow.textContent = currentSort === 'name-asc' ? '↓' : '↑';
-                durationArrow.textContent = '';
-            } else {
-                durationBtn.classList.add('active');
-                durationArrow.textContent = currentSort === 'duration-asc' ? '↓' : '↑';
-                nameArrow.textContent = '↓';
-            }
-        }
-
         function sortTools(toolsArray) {
-            let sorted = [...toolsArray];
-            const checked = sorted.filter(t => t.checkedOutBy);
-            const available = sorted.filter(t => !t.checkedOutBy);
-
-            if (currentSort.startsWith('name')) {
-                checked.sort((a, b) => {
-                    const comparison = a.name.localeCompare(b.name);
-                    return currentSort === 'name-asc' ? comparison : -comparison;
-                });
-                available.sort((a, b) => {
-                    const comparison = a.name.localeCompare(b.name);
-                    return currentSort === 'name-asc' ? comparison : -comparison;
-                });
-            } else if (currentSort.startsWith('duration')) {
-                checked.sort((a, b) => {
-                    const dateA = new Date(a.checkedOutDate);
-                    const dateB = new Date(b.checkedOutDate);
-                    const comparison = dateA - dateB;
-                    return currentSort === 'duration-asc' ? comparison : -comparison;
-                });
-                // available tools stay in their order
-            }
-
+            // Simply return tools in their current order (checked out first, then available)
+            const checked = toolsArray.filter(t => t.checkedOutBy);
+            const available = toolsArray.filter(t => !t.checkedOutBy);
             return [...checked, ...available];
         }
+
         // Activity Log GitHub Sync
         async function loadStaff() {
             try {
@@ -1736,9 +1680,6 @@
 
             // Apply sorting
             const sorted = sortTools(filtered);
-            
-            // Update sort button display
-            updateSortButtons();
             
             // Update category dropdown
             populateCategoryDropdown();
