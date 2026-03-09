@@ -619,6 +619,55 @@
             margin-bottom: 20px;
         }
 
+        /* Activity Item */
+        .activity-item {
+            padding: 8px;
+            background: #fafafa;
+            border: 1px solid var(--border);
+            margin-bottom: 8px;
+            border-radius: 0;
+            font-size: 0.8em;
+        }
+
+        .activity-tool {
+            font-weight: 700;
+            color: var(--primary);
+            margin-bottom: 2px;
+            word-wrap: break-word;
+            font-size: 0.85em;
+        }
+
+        .activity-details {
+            color: #666;
+            font-size: 0.75em;
+            margin-bottom: 4px;
+        }
+
+        .activity-time {
+            font-size: 0.7em;
+            color: #999;
+        }
+
+        .activity-item .badge {
+            display: inline-block;
+            padding: 1px 4px;
+            font-size: 0.65em;
+            font-weight: 700;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            margin-left: 4px;
+        }
+
+        .activity-item .badge.checkout {
+            background: #fff3cd;
+            color: #856404;
+        }
+
+        .activity-item .badge.return {
+            background: #d4edda;
+            color: #155724;
+        }
+
         .search-container input {
             width: 100%;
             padding: 12px;
@@ -786,6 +835,14 @@
 
             <!-- Right Sidebar -->
             <div class="sidebar">
+                <!-- Recent Activity -->
+                <div class="panel">
+                    <h2>Recent Activity</h2>
+                    <div id="activitySidebar" style="max-height: 400px; overflow-y: auto;">
+                        <div style="text-align: center; color: #999; padding: 20px; font-size: 0.9em;">Loading activity...</div>
+                    </div>
+                </div>
+
                 <!-- Quick Actions -->
                 <div class="panel">
                     <h2>Actions</h2>
@@ -1046,6 +1103,59 @@
         let selectedCategory = '';
 
         // Activity Logging
+        function generateActivityLog() {
+            const activities = [];
+            
+            tools.forEach(tool => {
+                // Add checkout activity
+                if (tool.checkedOutBy && tool.checkedOutDate && tool.checkedOutTime) {
+                    activities.push({
+                        tool: tool.name,
+                        person: tool.checkedOutBy,
+                        action: 'checked out',
+                        date: tool.checkedOutDate,
+                        time: tool.checkedOutTime,
+                        timestamp: new Date(tool.checkedOutDate + ' ' + tool.checkedOutTime)
+                    });
+                }
+                
+                // Add return activity
+                if (tool.returnedDate && tool.returnedTime) {
+                    activities.push({
+                        tool: tool.name,
+                        person: tool.checkedOutBy || 'Unknown',
+                        action: 'returned',
+                        date: tool.returnedDate,
+                        time: tool.returnedTime,
+                        timestamp: new Date(tool.returnedDate + ' ' + tool.returnedTime)
+                    });
+                }
+            });
+            
+            // Sort by timestamp, most recent first
+            return activities.sort((a, b) => b.timestamp - a.timestamp).slice(0, 20);
+        }
+
+        function renderActivitySidebar() {
+            const activities = generateActivityLog();
+            const activitySidebar = document.getElementById('activitySidebar');
+            
+            if (!activitySidebar) return;
+            
+            if (activities.length === 0) {
+                activitySidebar.innerHTML = '<div style="text-align: center; color: #999; padding: 20px; font-size: 0.9em;">No activity yet</div>';
+                return;
+            }
+            
+            activitySidebar.innerHTML = activities.map(item => `
+                <div class="activity-item">
+                    <div class="activity-tool">${item.tool}</div>
+                    <div class="activity-details">${item.person} ${item.action} <span class="badge ${item.action === 'checked out' ? 'checkout' : 'return'}">${item.action.toUpperCase()}</span></div>
+                    <div class="activity-time">${item.time}</div>
+                </div>
+            `).join('');
+        }
+
         // Category Filter
         function changeCategoryFilter() {
             selectedCategory = document.getElementById('categoryFilter').value;
@@ -1517,6 +1627,7 @@
                 `).join('');
             }
             updateStats();
+            renderActivitySidebar();
         }
 
         // Checkout Modal
@@ -1552,6 +1663,7 @@
             const tool = tools.find(t => t.id === currentToolId);
             tool.checkedOutBy = name;
             tool.checkedOutDate = new Date().toLocaleDateString('en-AU');
+            tool.checkedOutTime = new Date().toLocaleTimeString('en-AU', { hour: '2-digit', minute: '2-digit' });
             tool.expectedReturn = duration;
             tool.notes = document.getElementById('checkoutNotes').value || null;
             
@@ -1577,7 +1689,10 @@
             
             tool.checkedOutBy = null;
             tool.checkedOutDate = null;
+            tool.checkedOutTime = null;
             tool.expectedReturn = null;
+            tool.returnedDate = new Date().toLocaleDateString('en-AU');
+            tool.returnedTime = new Date().toLocaleTimeString('en-AU', { hour: '2-digit', minute: '2-digit' });
             tool.notes = null;
             
             saveTool();
