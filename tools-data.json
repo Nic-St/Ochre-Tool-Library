@@ -47,5 +47,17 @@
     "expectedReturn": "Not Sure",
     "notes": null,
     "checkedOutTime": "09:18 pm"
+  },
+  {
+    "id": 1773051788601,
+    "name": "Stihl Whipper Snipper",
+    "category": "Other",
+    "location": "Shed",
+    "condition": "good",
+    "image": null,
+    "checkedOutBy": null,
+    "checkedOutDate": null,
+    "expectedReturn": null,
+    "notes": null
   }
 ]
