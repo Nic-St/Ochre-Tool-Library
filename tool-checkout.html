@@ -614,54 +614,6 @@
             border-color: var(--accent);
         }
 
-        /* Activity Feed */
-        .activity-item {
-            padding: 8px;
-            background: #fafafa;
-            border: 1px solid var(--border);
-            margin-bottom: 8px;
-            border-radius: 0;
-            font-size: 0.8em;
-        }
-
-        .activity-tool {
-            font-weight: 700;
-            color: var(--primary);
-            margin-bottom: 2px;
-            word-wrap: break-word;
-            font-size: 0.85em;
-        }
-
-        .activity-action {
-            color: #666;
-            font-size: 0.75em;
-            margin-bottom: 4px;
-        }
-
-        .activity-time {
-            font-size: 0.7em;
-            color: #999;
-        }
-
-        .activity-item .badge {
-            display: inline-block;
-            padding: 1px 4px;
-            font-size: 0.65em;
-            font-weight: 700;
-            text-transform: uppercase;
-            letter-spacing: 0.5px;
-            margin-left: 4px;
-        }
-
-        .activity-item .badge.checkout {
-            background: #fff3cd;
-            color: #856404;
-        }
-
-        .activity-item .badge.return {
-            background: #d4edda;
-            color: #155724;
-        }
         .search-container {
             position: relative;
             margin-bottom: 20px;
@@ -834,14 +786,6 @@
 
             <!-- Right Sidebar -->
             <div class="sidebar">
-                <!-- Recent Activity -->
-                <div class="panel">
-                    <h2>Recent Activity</h2>
-                    <div id="activityFeed" style="max-height: 400px; overflow-y: auto;">
-                        <div class="empty-state" style="padding: 20px; text-align: center; color: #999; font-size: 0.9em;">No activity yet</div>
-                    </div>
-                </div>
-
                 <!-- Quick Actions -->
                 <div class="panel">
                     <h2>Actions</h2>
@@ -1098,67 +1042,8 @@
         let currentSort = localStorage.getItem('toolSort') || 'name-asc';
         let sortDirection = 'asc'; // asc or desc
         let selectedCategory = '';
-        let activityLog = [];
 
         // Activity Logging
-        function addActivity(toolName, person, action) {
-            const timestamp = new Date();
-            activityLog.unshift({
-                tool: toolName,
-                person: person,
-                action: action,
-                timestamp: timestamp
-            });
-            // Keep only last 50 activities
-            if (activityLog.length > 50) {
-                activityLog.pop();
-            }
-            // Save to localStorage as backup
-            const toSave = activityLog.map((item, index) => ({
-                id: String(index + 1),
-                tool: item.tool,
-                person: item.person,
-                action: item.action,
-                timestamp: item.timestamp.toISOString()
-            }));
-            localStorage.setItem('activityLog', JSON.stringify(toSave));
-            console.log('✅ Saved activity to localStorage:', activityLog.length, 'items');
-            renderActivityFeed();
-            saveActivityToGitHub();
-        }
-
-        function getRelativeTime(date) {
-            const now = new Date();
-            const diff = Math.floor((now - date) / 1000);
-            
-            if (diff < 60) return 'now';
-            if (diff < 3600) return Math.floor(diff / 60) + 'm ago';
-            if (diff < 86400) return Math.floor(diff / 3600) + 'h ago';
-            return Math.floor(diff / 86400) + 'd ago';
-        }
-
-        function renderActivityFeed() {
-            const activityFeed = document.getElementById('activityFeed');
-            if (!activityFeed) {
-                console.warn('Activity feed element not found in DOM');
-                return;
-            }
-            
-            if (activityLog.length === 0) {
-                activityFeed.innerHTML = '<div class="empty-state" style="padding: 20px; text-align: center; color: #999; font-size: 0.9em;">No activity yet</div>';
-                return;
-            }
-
-            activityFeed.innerHTML = activityLog.map(item => `
-                <div class="activity-item">
-                    <div class="activity-tool">${item.tool}</div>
-                    <div class="activity-action">${item.person} ${item.action} <span class="badge ${item.action === 'checked out' ? 'checkout' : 'return'}">${item.action.toUpperCase()}</span></div>
-                    <div class="activity-time">${getRelativeTime(item.timestamp)}</div>
-                </div>
-            `).join('');
-            console.log('Activity feed rendered with', activityLog.length, 'items');
-        }
-
         // Category Filter
         function changeCategoryFilter() {
             selectedCategory = document.getElementById('categoryFilter').value;
@@ -1251,183 +1136,6 @@
             return [...checked, ...available];
         }
         // Activity Log GitHub Sync
-        async function loadActivityFromGitHub() {
-            if (!GITHUB_TOKEN) {
-                loadActivityFromLocalStorage();
-                return;
-            }
-
-            try {
-                const url = `https://api.github.com/repos/${GITHUB_OWNER}/${GITHUB_REPO}/contents/activity-log.json`;
-                
-                const response = await fetch(url, {
-                    headers: {
-                        'Authorization': `token ${GITHUB_TOKEN}`,
-                        'Accept': 'application/vnd.github.v3.raw'
-                    }
-                });
-                
-                if (response.ok) {
-                    const data = await response.json();
-                    if (Array.isArray(data)) {
-                        activityLog = data.map(item => ({
-                            ...item,
-                            timestamp: new Date(item.timestamp)
-                        }));
-                        console.log('✅ Loaded activity from GitHub:', activityLog.length, 'items');
-                    } else {
-                        loadActivityFromLocalStorage();
-                    }
-                } else {
-                    loadActivityFromLocalStorage();
-                }
-            } catch (error) {
-                loadActivityFromLocalStorage();
-            }
-        }
-
-        function loadActivityFromLocalStorage() {
-            try {
-                const stored = localStorage.getItem('activityLog');
-                console.log('localStorage activityLog raw value:', stored ? stored.substring(0, 100) + '...' : 'null');
-                if (stored) {
-                    const parsed = JSON.parse(stored);
-                    activityLog = parsed.map(item => ({
-                        ...item,
-                        timestamp: new Date(item.timestamp)
-                    }));
-                    console.log('✅ Loaded activity from localStorage:', activityLog.length, 'items');
-                    return true;
-                } else {
-                    console.log('❌ No activity found in localStorage');
-                    return false;
-                }
-            } catch (error) {
-                console.error('❌ Error loading activity from localStorage:', error);
-                return false;
-            }
-        }
-
-        async function saveActivityToGitHub() {
-            // Always save to localStorage
-            try {
-                localStorage.setItem('activityLog', JSON.stringify(activityLog.map((item, index) => ({
-                    id: String(index + 1),
-                    tool: item.tool,
-                    person: item.person,
-                    action: item.action,
-                    timestamp: item.timestamp.toISOString()
-                }))));
-            } catch (e) {
-                console.warn('Could not save activity to localStorage:', e.message);
-            }
-
-            if (!GITHUB_TOKEN) {
-                return;
-            }
-
-            try {
-                const url = `https://api.github.com/repos/${GITHUB_OWNER}/${GITHUB_REPO}/contents/activity-log.json`;
-                
-                // Get SHA using git API which is more reliable
-                let sha = null;
-                let fileExists = false;
-                
-                try {
-                    // First get the commit SHA of the branch
-                    const refUrl = `https://api.github.com/repos/${GITHUB_OWNER}/${GITHUB_REPO}/git/refs/heads/${GITHUB_BRANCH}`;
-                    const refResponse = await fetch(refUrl, {
-                        headers: {
-                            'Authorization': `token ${GITHUB_TOKEN}`
-                        }
-                    });
-                    
-                    if (refResponse.ok) {
-                        const refData = await refResponse.json();
-                        const commitSha = refData.object.sha;
-                        console.log('Got branch commit SHA');
-                        
-                        // Now get the tree to find activity-log.json
-                        const treeUrl = `https://api.github.com/repos/${GITHUB_OWNER}/${GITHUB_REPO}/git/trees/${commitSha}`;
-                        const treeResponse = await fetch(treeUrl, {
-                            headers: {
-                                'Authorization': `token ${GITHUB_TOKEN}`
-                            }
-                        });
-                        
-                        if (treeResponse.ok) {
-                            const treeData = await treeResponse.json();
-                            const activityFile = treeData.tree.find(f => f.path === 'activity-log.json');
-                            if (activityFile) {
-                                sha = activityFile.sha;
-                                fileExists = true;
-                                console.log('Found activity-log.json SHA in tree');
-                            } else {
-                                console.log('activity-log.json not in tree yet');
-                                fileExists = false;
-                            }
-                        }
-                    }
-                } catch (e) {
-                    console.warn('Error getting SHA via git API:', e.message);
-                    // Try fallback: just try to fetch and see if we get 404
-                    try {
-                        const fallbackResponse = await fetch(url, {
-                            headers: {
-                                'Authorization': `token ${GITHUB_TOKEN}`
-                            }
-                        });
-                        fileExists = fallbackResponse.ok;
-                    } catch (e2) {
-                        fileExists = false;
-                    }
-                }
-
-                const activityArray = activityLog.map((item, index) => ({
-                    id: String(index + 1),
-                    tool: item.tool,
-                    person: item.person,
-                    action: item.action,
-                    timestamp: item.timestamp.toISOString()
-                }));
-
-                const content = btoa(unescape(encodeURIComponent(JSON.stringify(activityArray, null, 2))));
-                
-                const requestBody = {
-                    message: 'Update activity log',
-                    content: content
-                };
-                
-                // Add appropriate parameters
-                if (fileExists && sha) {
-                    requestBody.sha = sha;
-                    console.log('Updating file with SHA:', sha.substring(0, 8));
-                } else {
-                    requestBody.branch = GITHUB_BRANCH;
-                    console.log('Creating new file');
-                }
-                
-                const response = await fetch(url, {
-                    method: 'PUT',
-                    headers: {
-                        'Authorization': `token ${GITHUB_TOKEN}`,
-                        'Content-Type': 'application/json'
-                    },
-                    body: JSON.stringify(requestBody)
-                });
-
-                if (response.ok) {
-                    console.log('✅ Activity synced to GitHub');
-                } else {
-                    console.error('Activity sync failed:', response.status);
-                    const errData = await response.json();
-                    console.error('Error:', errData.message);
-                }
-            } catch (error) {
-                console.error('Error syncing activity:', error.message);
-            }
-        }
-
         async function loadStaff() {
             try {
                 const response = await fetch('https://raw.githubusercontent.com/Nic-St/Ochre-Tool-Library/main/staff.json');
@@ -1845,9 +1553,6 @@
             tool.expectedReturn = duration;
             tool.notes = document.getElementById('checkoutNotes').value || null;
             
-            // Log activity
-            addActivity(tool.name, name, 'checked out');
-            
             saveTool();
             renderTools();
             closeCheckoutModal();
@@ -1872,9 +1577,6 @@
             tool.checkedOutDate = null;
             tool.expectedReturn = null;
             tool.notes = null;
-            
-            // Log activity
-            addActivity(tool.name, returnedBy, 'returned');
             
             saveTool();
             renderTools();
@@ -2153,8 +1855,6 @@
         window.addEventListener('DOMContentLoaded', async () => {
             await initializeGitHub();
             await loadStaff();
-            await loadActivityFromGitHub();
-            renderActivityFeed();  // Ensure activity is rendered
             renderTools();
             
             // Track last update time for display
@@ -2179,8 +1879,6 @@
                 // Only refresh if user hasn't been active for 5 seconds
                 if (Date.now() - lastActivityTime > 5000) {
                     await loadToolsFromGitHub();
-                    await loadActivityFromGitHub();  // Also refresh activity
-                    renderActivityFeed();  // Re-render activity
                     lastUpdateTime = Date.now();
                 }
             }, 10000);
