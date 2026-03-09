@@ -12,18 +12,6 @@
     "notes": null
   },
   {
-    "id": 1772799724617,
-    "name": "Test",
-    "category": "Other",
-    "location": "Shed",
-    "condition": "damaged",
-    "image": null,
-    "checkedOutBy": null,
-    "checkedOutDate": null,
-    "expectedReturn": null,
-    "notes": null
-  },
-  {
     "id": 1773026021187,
     "name": "Trailer",
     "category": "Other",
