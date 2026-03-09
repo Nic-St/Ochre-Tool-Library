@@ -823,11 +823,10 @@
             <form id="addToolForm">
                 <div class="form-group tool-image-upload">
                     <label>Tool Image</label>
-                    <div class="image-preview" id="imagePreview">
+                    <div class="image-preview" id="imagePreview" onclick="document.getElementById('toolImage').click()" style="cursor: pointer;">
                         <span>Click to upload image</span>
                     </div>
-                    <label for="toolImage" class="image-upload-label">📷 Choose Image</label>
-                    <input type="file" id="toolImage" accept="image/*">
+                    <input type="file" id="toolImage" accept="image/*" style="display: none;">
                 </div>
                 <div class="form-group">
                     <label>Tool Name</label>
@@ -918,11 +917,10 @@
         <div class="modal-content">
             <h3>Add/Update Tool Image</h3>
             <div class="form-group tool-image-upload">
-                <div class="image-preview" id="editImagePreview">
+                <div class="image-preview" id="editImagePreview" onclick="document.getElementById('editToolImage').click()" style="cursor: pointer;">
                     <span>Click to upload image</span>
                 </div>
-                <label for="editToolImage" class="image-upload-label">📷 Choose Image</label>
-                <input type="file" id="editToolImage" accept="image/*">
+                <input type="file" id="editToolImage" accept="image/*" style="display: none;">
             </div>
             <div class="modal-buttons">
                 <button class="btn btn-primary" onclick="confirmEditImage()">Save Image</button>
