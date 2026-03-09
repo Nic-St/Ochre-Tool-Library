@@ -1,21 +1,5 @@
 [
   {
-    "id": 1772798472588,
-    "name": "B Tool",
-    "category": "Power Drills",
-    "location": "Shed",
-    "condition": "maintenance",
-    "image": null,
-    "checkedOutBy": null,
-    "checkedOutDate": null,
-    "expectedReturn": null,
-    "notes": null,
-    "checkedOutTime": null,
-    "returnedDate": "09/03/2026",
-    "returnedTime": "08:12 pm",
-    "returnedBy": "Nic"
-  },
-  {
     "id": 1772798485651,
     "name": "C Tool",
     "category": "Safety",
