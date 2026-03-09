@@ -913,20 +913,12 @@
                 </div>
                 <div class="form-group">
                     <label>Category</label>
-                    <select id="toolCategory" required>
-                        <option value="">Select Category</option>
-                        <option value="Power Drills">Power Drills</option>
-                        <option value="Saws">Saws</option>
-                        <option value="Sanders">Sanders</option>
-                        <option value="Impact Drivers">Impact Drivers</option>
-                        <option value="Nail Guns">Nail Guns</option>
-                        <option value="Grinders">Grinders</option>
-                        <option value="Hand Tools">Hand Tools</option>
-                        <option value="Measurement">Measurement</option>
-                        <option value="Climbing">Climbing/Access</option>
-                        <option value="Safety">Safety Equipment</option>
-                        <option value="Other">Other</option>
-                    </select>
+                    <div style="display: flex; gap: 6px;">
+                        <select id="toolCategory" required style="flex: 1;">
+                            <option value="">Select Category</option>
+                        </select>
+                        <button type="button" onclick="openAddCategoryModal()" title="Add new category" style="padding: 8px 10px; border: 2px solid var(--accent); background: var(--accent); color: white; cursor: pointer; font-family: 'IBM Plex Mono', monospace; font-weight: 700; font-size: 1em; line-height: 1; display: flex; align-items: center; justify-content: center; width: 40px; height: 40px; transition: all 0.3s; border-radius: 2px;" onmouseover="this.style.background='#e55a2b'; this.style.transform='scale(1.05)';" onmouseout="this.style.background='var(--accent)'; this.style.transform='scale(1)';">+</button>
+                    </div>
                 </div>
                 <div class="form-group">
                     <label>Location (when not checked out)</label>
@@ -945,6 +937,20 @@
                     <button type="button" class="btn btn-secondary" onclick="closeAddToolModal()">Cancel</button>
                 </div>
             </form>
+        </div>
+    </div>
+
+    <!-- Quick Add Category Modal -->
+    <div id="quickAddCategoryModal" class="modal">
+        <div class="modal-content" style="max-width: 300px;">
+            <h3>New Category</h3>
+            <div class="form-group">
+                <input type="text" id="quickCategoryName" placeholder="Category name" style="width: 100%; padding: 8px 12px; border: 2px solid var(--border); font-family: 'IBM Plex Mono', monospace; font-size: 0.9em;">
+            </div>
+            <div style="display: flex; gap: 8px;">
+                <button onclick="closeAddCategoryModal()" type="button" class="btn btn-secondary" style="flex: 1;">Cancel</button>
+                <button onclick="confirmAddCategory()" type="button" class="btn btn-primary" style="flex: 1;">Add</button>
+            </div>
         </div>
     </div>
 
@@ -1206,6 +1212,44 @@
                 categoryFilter.value = '';
                 selectedCategory = '';
             }
+        }
+
+        function openAddCategoryModal() {
+            document.getElementById('quickAddCategoryModal').classList.add('active');
+            document.getElementById('quickCategoryName').value = '';
+            setTimeout(() => document.getElementById('quickCategoryName').focus(), 100);
+        }
+
+        function closeAddCategoryModal() {
+            document.getElementById('quickAddCategoryModal').classList.remove('active');
+        }
+
+        function confirmAddCategory() {
+            const input = document.getElementById('quickCategoryName');
+            const categoryName = input.value.trim();
+            
+            if (!categoryName) {
+                alert('Please enter a category name');
+                return;
+            }
+            
+            // Check if category already exists
+            const existingCategories = [...new Set(tools.map(t => t.category))];
+            if (existingCategories.includes(categoryName)) {
+                alert('This category already exists');
+                return;
+            }
+            
+            // Add the category to the select in the modal
+            const categorySelect = document.getElementById('toolCategory');
+            const option = document.createElement('option');
+            option.value = categoryName;
+            option.textContent = categoryName;
+            categorySelect.appendChild(option);
+            categorySelect.value = categoryName;
+            
+            closeAddCategoryModal();
+            showNotification(`Category "${categoryName}" added`, 'success');
         }
 
         // Sort Functions
@@ -1571,6 +1615,19 @@
 
         // Add Tool Modal
         function openAddToolModal() {
+            // Populate category dropdown with existing categories
+            const categorySelect = document.getElementById('toolCategory');
+            const existingCategories = [...new Set(tools.map(t => t.category))].sort();
+            
+            // Clear and rebuild options
+            categorySelect.innerHTML = '<option value="">Select Category</option>';
+            existingCategories.forEach(category => {
+                const option = document.createElement('option');
+                option.value = category;
+                option.textContent = category;
+                categorySelect.appendChild(option);
+            });
+            
             document.getElementById('addToolModal').classList.add('active');
             document.getElementById('toolName').focus();
         }
@@ -1956,6 +2013,13 @@
         // Search
         document.getElementById('searchBox').addEventListener('input', renderTools);
 
+        // Category input - Enter to add
+        document.getElementById('quickCategoryName').addEventListener('keypress', (e) => {
+            if (e.key === 'Enter') {
+                confirmAddCategory();
+            }
+        });
+
         // Export
         function exportData() {
             const csv = [
@@ -2027,7 +2091,7 @@
                 updateLastUpdatedTime(lastUpdateTime);
             }, 1000);
             
-            // Refresh data every 35 seconds to pick up changes from other users
+            // Refresh data every 60 seconds to pick up changes from other users
             // But only if user hasn't been active for 5 seconds
             let lastActivityTime = Date.now();
             document.addEventListener('click', () => {
@@ -2043,7 +2107,7 @@
                     await loadToolsFromGitHub();
                     lastUpdateTime = Date.now();
                 }
-            }, 35000);
+            }, 60000);
         });
 
         // Update the "Last Updated" display time
