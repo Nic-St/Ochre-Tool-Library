@@ -1113,6 +1113,13 @@
             if (activityLog.length > 50) {
                 activityLog.pop();
             }
+            // Save to localStorage as backup
+            localStorage.setItem('activityLog', JSON.stringify(activityLog.map(item => ({
+                tool: item.tool,
+                person: item.person,
+                action: item.action,
+                timestamp: item.timestamp.toISOString()
+            }))));
             renderActivityFeed();
             saveActivityToGitHub();
         }
@@ -1239,7 +1246,8 @@
         // Activity Log GitHub Sync
         async function loadActivityFromGitHub() {
             if (!GITHUB_TOKEN) {
-                console.log('No GitHub token set, skipping activity sync');
+                console.log('No GitHub token set, loading from localStorage');
+                loadActivityFromLocalStorage();
                 return;
             }
 
@@ -1260,16 +1268,48 @@
                         timestamp: new Date(item.timestamp)
                     }));
                     renderActivityFeed();
-                    console.log('Loaded activity from GitHub');
+                    console.log('Loaded activity from GitHub:', activityLog.length, 'items');
+                } else {
+                    console.warn('Could not load activity from GitHub, trying localStorage');
+                    loadActivityFromLocalStorage();
                 }
             } catch (error) {
                 console.error('Error loading activity from GitHub:', error);
+                loadActivityFromLocalStorage();
+            }
+        }
+
+        function loadActivityFromLocalStorage() {
+            try {
+                const stored = localStorage.getItem('activityLog');
+                if (stored) {
+                    activityLog = JSON.parse(stored).map(item => ({
+                        ...item,
+                        timestamp: new Date(item.timestamp)
+                    }));
+                    renderActivityFeed();
+                    console.log('Loaded activity from localStorage:', activityLog.length, 'items');
+                }
+            } catch (error) {
+                console.error('Error loading activity from localStorage:', error);
             }
         }
 
         async function saveActivityToGitHub() {
+            // Always save to localStorage first for redundancy
+            try {
+                localStorage.setItem('activityLog', JSON.stringify(activityLog.map(item => ({
+                    tool: item.tool,
+                    person: item.person,
+                    action: item.action,
+                    timestamp: item.timestamp.toISOString()
+                }))));
+            } catch (e) {
+                console.warn('Could not save activity to localStorage:', e.message);
+            }
+
             if (!GITHUB_TOKEN) {
-                console.log('No GitHub token set, skipping activity sync');
+                console.log('No GitHub token set, activity saved to localStorage only');
                 return;
             }
 
@@ -1294,7 +1334,7 @@
                 }
 
                 if (!sha) {
-                    console.error('Failed to get activity file SHA - cannot update');
+                    console.error('Failed to get activity file SHA - cannot update GitHub');
                     return;
                 }
 
