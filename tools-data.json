@@ -18,10 +18,10 @@
     "location": "Shed",
     "condition": "damaged",
     "image": null,
-    "checkedOutBy": "Nic",
-    "checkedOutDate": "06/03/2026",
-    "expectedReturn": "Not Sure",
-    "notes": "Fuckin sick"
+    "checkedOutBy": null,
+    "checkedOutDate": null,
+    "expectedReturn": null,
+    "notes": null
   },
   {
     "id": 1772798496905,
