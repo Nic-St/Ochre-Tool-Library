@@ -1120,10 +1120,10 @@
                 }
                 
                 // Add return activity
-                if (tool.returnedDate && tool.returnedTime) {
+                if (tool.returnedDate && tool.returnedTime && tool.returnedBy) {
                     activities.push({
                         tool: tool.name,
-                        person: tool.checkedOutBy || 'Unknown',
+                        person: tool.returnedBy,
                         action: 'returned',
                         date: tool.returnedDate,
                         time: tool.returnedTime,
@@ -1691,6 +1691,7 @@
             tool.checkedOutDate = null;
             tool.checkedOutTime = null;
             tool.expectedReturn = null;
+            tool.returnedBy = returnedBy;
             tool.returnedDate = new Date().toLocaleDateString('en-AU');
             tool.returnedTime = new Date().toLocaleTimeString('en-AU', { hour: '2-digit', minute: '2-digit' });
             tool.notes = null;
