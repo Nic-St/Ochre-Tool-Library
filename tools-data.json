@@ -34,5 +34,17 @@
     "checkedOutDate": null,
     "expectedReturn": null,
     "notes": null
+  },
+  {
+    "id": 1773048712736,
+    "name": "Full Boar Jackhammer",
+    "category": "Other",
+    "location": "Shed",
+    "condition": "good",
+    "image": null,
+    "checkedOutBy": null,
+    "checkedOutDate": null,
+    "expectedReturn": null,
+    "notes": null
   }
 ]
