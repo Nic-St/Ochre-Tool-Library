@@ -1,17 +1,5 @@
 [
   {
-    "id": 1772798485651,
-    "name": "C Tool",
-    "category": "Safety",
-    "location": "Shed",
-    "condition": "damaged",
-    "image": null,
-    "checkedOutBy": null,
-    "checkedOutDate": null,
-    "expectedReturn": null,
-    "notes": null
-  },
-  {
     "id": 1772798496905,
     "name": "Makita Track Saw",
     "category": "Saws",
