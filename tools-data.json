@@ -22,10 +22,11 @@
     "location": "Shed",
     "condition": "good",
     "image": null,
-    "checkedOutBy": null,
-    "checkedOutDate": null,
-    "expectedReturn": null,
-    "notes": null
+    "checkedOutBy": "Danny",
+    "checkedOutDate": "11/07/2026",
+    "expectedReturn": "Full Day",
+    "notes": null,
+    "checkedOutTime": "01:58 pm"
   },
   {
     "id": 1773048414735,
